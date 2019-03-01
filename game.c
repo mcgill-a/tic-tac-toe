@@ -1,28 +1,73 @@
 #include <stdio.h>
 
-void displayBoard();
+#define BOARD_SIZE 3
+
+void displayBoard(int[BOARD_SIZE][BOARD_SIZE]);
 
 int main(void)
 {
-    printf("Tic Tac Toe\n");
+    printf("Tic Tac Toe (%dx%d)\n", BOARD_SIZE, BOARD_SIZE);
     
-    displayBoard();
+    int board[BOARD_SIZE][BOARD_SIZE] = {0};
+    displayBoard(board);
     return 0;
 }
 
-void displayBoard()
+void displayBoard(int board[BOARD_SIZE][BOARD_SIZE])
 {
-    printf(" =======================\n");
-    printf(" ||     ||     ||     ||\n");
-    printf(" ||  %d  ||  %d  ||  %d  ||\n", 1, 2, 3);
-    printf(" ||     ||     ||     ||\n");
-    printf(" =======================\n");
-    printf(" ||     ||     ||     ||\n");
-    printf(" ||  %d  ||  %d  ||  %d  ||\n", 4, 5, 6);
-    printf(" ||     ||     ||     ||\n");
-    printf(" =======================\n");
-    printf(" ||     ||     ||     ||\n");
-    printf(" ||  %d  ||  %d  ||  %d  ||\n", 7, 8, 9);
-    printf(" ||     ||     ||     ||\n");
-    printf(" =======================\n");
+    // Top edge
+    for (int i=0; i < BOARD_SIZE; i++)
+    {
+        printf("=======");
+    }
+    printf("\n");
+
+    for (int idx=0; idx < BOARD_SIZE; idx++)
+    {
+        // Spacer 1
+        for (int i=0; i < BOARD_SIZE; i++)
+        {
+            printf("|     |");
+        }
+        printf("\n");
+
+        // Block value
+        for (int i=0; i < BOARD_SIZE; i++)
+        {
+            printf("|  %d  |", board[idx][i]);
+        }
+        printf("\n");
+
+        // Spacer 2
+        for (int i=0; i < BOARD_SIZE; i++)
+        {
+            printf("|     |");
+        }
+        printf("\n");
+        
+        // Bottom edge
+        for (int i=0; i < BOARD_SIZE; i++)
+        {
+            printf("=======");
+        }
+        printf("\n");
+    }
 }
+
+/*
+    STATIC 3x3 BOARD:
+    printf("=======================\n");
+    printf("||     ||     ||     ||\n");
+    printf("||  %d  ||  %d  ||  %d  ||\n", board[0][0], board[0][1], board[0][2]);
+    printf("||     ||     ||     ||\n");
+    printf("=======================\n");
+    printf("||     ||     ||     ||\n");
+    printf("||  %d  ||  %d  ||  %d  ||\n", board[1][0], board[1][1], board[1][2]);
+    printf("||     ||     ||     ||\n");
+    printf("=======================\n");
+    printf("||     ||     ||     ||\n");
+    printf("||  %d  ||  %d  ||  %d  ||\n", board[2][0], board[2][1], board[2][2]);
+    printf("||     ||     ||     ||\n");
+    printf("=======================\n");
+
+*/
