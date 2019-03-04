@@ -197,7 +197,7 @@ int checkVertical(int board[BOARD_SIZE][BOARD_SIZE])
 
 int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
 {
-    int rightDiagonal = 0, leftDiagonal = 0;
+    int rightDiagonal = 0, leftDiagonal = 0, row = 0, column = 0;
 
     /*
         Right Diagonal:
@@ -208,8 +208,8 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
     // Loop through the right diagonal values
     for(int i = 0; i < BOARD_SIZE * BOARD_SIZE; i += (BOARD_SIZE + 1))
     {
-        int row = ((i - 1) / BOARD_SIZE + 1) - 1;
-        int column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - (i+1));
+        row = ((i - 1) / BOARD_SIZE + 1) - 1;
+        column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - (i+1));
         rightDiagonal += board[row][column];       
     }
 
@@ -233,8 +233,8 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
    // Loop through the right diagonal values
     for(int i = BOARD_SIZE-1; i < BOARD_SIZE * BOARD_SIZE; i += (BOARD_SIZE - 1))
     {
-        int row = ((i - 1) / BOARD_SIZE + 1) - 1;
-        int column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - (i+1));
+        row = ((i - 1) / BOARD_SIZE + 1) - 1;
+        column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - (i+1));
         leftDiagonal += board[row][column];       
     }
 
@@ -266,44 +266,44 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE])
     printf("\n");
 
     int counter = 0;
-    for (int idx=0; idx < BOARD_SIZE; idx++)
+    for (int i=0; i < BOARD_SIZE; i++)
     {
         // Spacer 1
-        for (int i=0; i < BOARD_SIZE; i++)
+        for (int j=0; j < BOARD_SIZE; j++)
         {
             printf("|     |");
         }
         printf("\n");
 
         // Block value
-        for (int i=0; i < BOARD_SIZE; i++)
+        for (int j=0; j < BOARD_SIZE; j++)
         {
             counter++;
-            if (board[idx][i] == 0)
+            if (board[i][j] == 0)
             {
                 //printf("|     |");
                 printf("|  %d  |", counter);
             }
-            else if (board[idx][i] == 2)
+            else if (board[i][j] == 2)
             {
-                printf("|  X  |", board[idx][i]);
+                printf("|  X  |", board[i][j]);
             }
-            else if (board[idx][i] == -2)
+            else if (board[i][j] == -2)
             {
-                printf("|  O  |", board[idx][i]);
+                printf("|  O  |", board[i][j]);
             }
         }
         printf("\n");
 
         // Spacer 2
-        for (int i=0; i < BOARD_SIZE; i++)
+        for (int j=0; j < BOARD_SIZE; j++)
         {
             printf("|     |");
         }
         printf("\n");
         
         // Bottom edge
-        for (int i=0; i < BOARD_SIZE; i++)
+        for (int j=0; j < BOARD_SIZE; j++)
         {
             printf("=======");
         }
