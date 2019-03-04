@@ -9,6 +9,7 @@ int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int);
 int checkStatus(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkVertical(int board[BOARD_SIZE][BOARD_SIZE]);
+int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE]);
 
 int main(void)
 {
@@ -128,6 +129,12 @@ int checkStatus(int board[BOARD_SIZE][BOARD_SIZE])
         return status;
     }
 
+    status = checkDiagonal(board);
+    if(status != 0)
+    {
+        return status;
+    }
+
     //  0 >> No winner
     // +2 >> X wins
     // -2 >> O wins
@@ -183,6 +190,38 @@ int checkVertical(int board[BOARD_SIZE][BOARD_SIZE])
             // O wins
             return -2;
         }
+    }
+    // No winner yet
+    return 0;
+}
+
+int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
+{
+    int rightDiagonal = 0, leftDiagonal = 0;
+
+    /*
+        Right Diagonal:
+        (3x3) >> Positions 1, 5, 9 || 0, 4, 8
+        Therefore, skip amount >> BOARD_SIZE + 1
+    */
+
+    // Loop through the right diagonal values
+    for(int i = 0; i < BOARD_SIZE * BOARD_SIZE; i += (BOARD_SIZE + 1))
+    {
+        int row = ((i - 1) / BOARD_SIZE + 1) - 1;
+        int column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - (i+1));
+        rightDiagonal += board[row][column];       
+    }
+
+    if (rightDiagonal == BOARD_SIZE * 2)
+    {
+        // X wins
+        return 2;
+    }
+    else if (rightDiagonal == BOARD_SIZE * (-2))
+    {
+        // O wins
+        return -2;
     }
     // No winner yet
     return 0;
