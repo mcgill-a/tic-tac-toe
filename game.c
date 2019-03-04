@@ -223,6 +223,32 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
         // O wins
         return -2;
     }
+
+    /*
+        Left Diagonal:
+        (3x3) >> Positions 3, 5, 7 || 2, 4, 6
+        Therefore, skip amount >> BOARD_SIZE - 1
+    */
+
+   // Loop through the right diagonal values
+    for(int i = BOARD_SIZE-1; i < BOARD_SIZE * BOARD_SIZE; i += (BOARD_SIZE - 1))
+    {
+        int row = ((i - 1) / BOARD_SIZE + 1) - 1;
+        int column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - (i+1));
+        leftDiagonal += board[row][column];       
+    }
+
+    if (leftDiagonal == BOARD_SIZE * 2)
+    {
+        // X wins
+        return 2;
+    }
+    else if (leftDiagonal == BOARD_SIZE * (-2))
+    {
+        // O wins
+        return -2;
+    }
+
     // No winner yet
     return 0;
 }
@@ -255,8 +281,8 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE])
             counter++;
             if (board[idx][i] == 0)
             {
-                printf("|     |");
-                //printf("|  %d  |", counter);
+                //printf("|     |");
+                printf("|  %d  |", counter);
             }
             else if (board[idx][i] == 2)
             {
@@ -284,21 +310,3 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE])
         printf("\n");
     }
 }
-
-/*
-    STATIC 3x3 BOARD:
-    printf("=======================\n");
-    printf("||     ||     ||     ||\n");
-    printf("||  %d  ||  %d  ||  %d  ||\n", board[0][0], board[0][1], board[0][2]);
-    printf("||     ||     ||     ||\n");
-    printf("=======================\n");
-    printf("||     ||     ||     ||\n");
-    printf("||  %d  ||  %d  ||  %d  ||\n", board[1][0], board[1][1], board[1][2]);
-    printf("||     ||     ||     ||\n");
-    printf("=======================\n");
-    printf("||     ||     ||     ||\n");
-    printf("||  %d  ||  %d  ||  %d  ||\n", board[2][0], board[2][1], board[2][2]);
-    printf("||     ||     ||     ||\n");
-    printf("=======================\n");
-
-*/
