@@ -3,10 +3,12 @@
 
 #define BOARD_SIZE 3
 
+int play(int board[BOARD_SIZE][BOARD_SIZE]);
 void displayBoard(int[BOARD_SIZE][BOARD_SIZE]);
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int);
 int checkStatus(int board[BOARD_SIZE][BOARD_SIZE]);
-int play(int board[BOARD_SIZE][BOARD_SIZE]);
+int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE]);
+int checkVertical(int board[BOARD_SIZE][BOARD_SIZE]);
 
 int main(void)
 {
@@ -18,16 +20,16 @@ int main(void)
 int play(int board[BOARD_SIZE][BOARD_SIZE])
 {
     displayBoard(board);
-    int gameOver = -1;
+    int gameOver = 0;
     int count = 0;
     int currentPlayer = 0;
-    while(gameOver == -1)
+    while(gameOver == 0)
     {
         // If there are no possible moves left
         if (count == BOARD_SIZE * BOARD_SIZE)
         {
             // Game ends in a draw
-            return 0;
+            return -1;
         }
 
         if(count % 2 == 0)
@@ -86,7 +88,7 @@ int play(int board[BOARD_SIZE][BOARD_SIZE])
         while (end != buf + strlen(buf));
     }
 
-    return 0;
+    return -1;
 }
 
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int position, int value)
@@ -120,6 +122,12 @@ int checkStatus(int board[BOARD_SIZE][BOARD_SIZE])
         return status;
     }
 
+    status = checkVertical(board);
+    if(status != 0)
+    {
+        return status;
+    }
+
     //  0 >> No winner
     // +2 >> X wins
     // -2 >> O wins
@@ -144,6 +152,33 @@ int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE])
             return 2;
         }
         else if (rowTotal == BOARD_SIZE * (-2))
+        {
+            // O wins
+            return -2;
+        }
+    }
+    // No winner yet
+    return 0;
+}
+
+int checkVertical(int board[BOARD_SIZE][BOARD_SIZE])
+{
+    int columnTotal;
+    // Loop through each column
+    for(int i = 0; i < BOARD_SIZE; i++)
+    {
+        columnTotal = 0;
+        // Loop through each row in the column
+        for (int j = 0; j < BOARD_SIZE; j++)
+        {
+            columnTotal += board[j][i];
+        }
+        if (columnTotal == BOARD_SIZE * 2)
+        {
+            // X wins
+            return 2;
+        }
+        else if (columnTotal == BOARD_SIZE * (-2))
         {
             // O wins
             return -2;
