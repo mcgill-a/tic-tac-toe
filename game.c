@@ -24,12 +24,12 @@ int main(void)
 
         if(count % 2 == 0)
         {
-            printf("(X) Enter a position 1-%d\n", BOARD_SIZE);
+            printf("(X) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
             currentPlayer = 1;
         }
         else
         {
-            printf("(O) Enter a position 1-%d\n", BOARD_SIZE);
+            printf("(O) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
             currentPlayer = 2;
         }
         
