@@ -1,10 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define BOARD_SIZE 3
+// Clear the buffer to avoid problems when game is reset
+#define CLEARBUF() char ch; while ((ch = getchar()) != '\n' && ch != EOF);
 
-int play(int board[BOARD_SIZE][BOARD_SIZE]);
-void displayBoard(int[BOARD_SIZE][BOARD_SIZE]);
+int play(int board[BOARD_SIZE][BOARD_SIZE], int, int);
+void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int);
+void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int);
 int checkStatus(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE]);
@@ -14,22 +18,55 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE]);
 int main(void)
 {
     int board[BOARD_SIZE][BOARD_SIZE] = {0}; 
-    int result = play(board);
+    int playerOneScore = 0;
+    int playerTwoScore = 0;
+    int result = 0;
+    int playAgain = 0;
+    do {
+        result = play(board, playerOneScore, playerTwoScore);
+        if (result == 2)
+        {
+            playerOneScore += 1;
+        }
+        else if (result == -2)
+        {
+            playerTwoScore += 1;
+        }
+        printf("Play again? Y/N\n");
+        char repeat;
+        scanf("%c", &repeat);
+        if(toupper(repeat) == 'Y')
+        {
+            playAgain = 1;
+            // Reset the board
+            resetBoard(board);
+            fflush(stdin);
+            CLEARBUF()
+        }
+        else
+        {
+            playAgain = 0;
+            break;
+        }
+    } while(playAgain == 1);
+    
     return 0;
 }
 
-int play(int board[BOARD_SIZE][BOARD_SIZE])
+int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore)
 {
-    displayBoard(board);
+    displayBoard(board, playerOneScore, playerTwoScore);
     int gameOver = 0;
     int count = 0;
     int currentPlayer = 0;
     while(gameOver == 0)
     {
+        
         // If there are no possible moves left
         if (count == BOARD_SIZE * BOARD_SIZE)
         {
             // Game ends in a draw
+            printf("Game ended in a draw\n");
             return -1;
         }
 
@@ -62,17 +99,19 @@ int play(int board[BOARD_SIZE][BOARD_SIZE])
                 int valid = updateBoard(board, input, currentPlayer);
                 if(valid != -1)
                 {
-                    displayBoard(board);
+                    displayBoard(board, playerOneScore, playerTwoScore);
                     count++;
                     gameOver = checkStatus(board);
                     if (gameOver == 2)
                     {
-                        printf("Player one (X) wins");
+                        displayBoard(board, playerOneScore+1, playerTwoScore);
+                        printf("Player one (X) wins\n");
                         return gameOver;
                     }
                     else if (gameOver == -2)
                     {
-                        printf("Player two (O) wins");
+                        displayBoard(board, playerOneScore, playerTwoScore+1);
+                        printf("Player two (O) wins\n");
                         return gameOver;
                     }
                 }
@@ -253,11 +292,23 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
     return 0;
 }
 
-void displayBoard(int board[BOARD_SIZE][BOARD_SIZE])
+void resetBoard(int board[BOARD_SIZE][BOARD_SIZE])
+{
+    for(int i = 0; i < BOARD_SIZE; i++)
+    {
+        // Loop through each column in the row
+        for (int j = 0; j < BOARD_SIZE; j++)
+        {
+            board[i][j] = 0;
+        }
+    }
+}
+
+void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore)
 {
     system("cls");
     printf("Tic Tac Toe (%dx%d)\n", BOARD_SIZE, BOARD_SIZE);
-
+    printf("SCORE: (X) %d - %d (O)\n", playerOneScore, playerTwoScore);
     // Top edge
     for (int i=0; i < BOARD_SIZE; i++)
     {
