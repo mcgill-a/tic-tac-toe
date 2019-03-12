@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
 
 #define BOARD_SIZE 3
 // Clear the buffer to avoid problems when game is reset
 #define CLEARBUF() char ch; while ((ch = getchar()) != '\n' && ch != EOF);
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int, int);
+int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int);
 void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int);
 void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int);
@@ -22,8 +23,13 @@ int main(void)
     int playerTwoScore = 0;
     int result = 0;
     int playAgain = 0;
+    srand( time(NULL) );
+    int startingPlayer = rand() % 2;
     do {
-        result = play(board, playerOneScore, playerTwoScore);
+        // Random player starts first game, then alternate
+        result = play(board, playerOneScore, playerTwoScore, startingPlayer);
+        startingPlayer++;
+        
         if (result == 2)
         {
             playerOneScore += 1;
@@ -53,15 +59,15 @@ int main(void)
     return 0;
 }
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore)
+int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer)
 {
     displayBoard(board, playerOneScore, playerTwoScore, 1);
     int gameOver = 0;
     int count = 0;
     int currentPlayer = 0;
+    
     while(gameOver == 0)
     {
-        
         // If there are no possible moves left
         if (count == BOARD_SIZE * BOARD_SIZE)
         {
@@ -69,8 +75,21 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
             printf("Game ended in a draw\n");
             return -1;
         }
-
-        if(count % 2 == 0)
+        if (count == 0)
+        {
+            if (startingPlayer % 2 == 0)
+            {
+                printf("(X) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
+                currentPlayer = 2;
+            }
+            else
+            {
+                printf("(O) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
+                currentPlayer = -2;
+            }
+            
+        }
+        else if(currentPlayer == -2)
         {
             printf("(X) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
             currentPlayer = 2;
