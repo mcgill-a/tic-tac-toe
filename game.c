@@ -7,7 +7,7 @@
 #define CLEARBUF() char ch; while ((ch = getchar()) != '\n' && ch != EOF);
 
 int play(int board[BOARD_SIZE][BOARD_SIZE], int, int);
-void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int);
+void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int);
 void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int);
 int checkStatus(int board[BOARD_SIZE][BOARD_SIZE]);
@@ -55,7 +55,7 @@ int main(void)
 
 int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore)
 {
-    displayBoard(board, playerOneScore, playerTwoScore);
+    displayBoard(board, playerOneScore, playerTwoScore, 1);
     int gameOver = 0;
     int count = 0;
     int currentPlayer = 0;
@@ -99,18 +99,18 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                 int valid = updateBoard(board, input, currentPlayer);
                 if(valid != -1)
                 {
-                    displayBoard(board, playerOneScore, playerTwoScore);
+                    displayBoard(board, playerOneScore, playerTwoScore, 0);
                     count++;
                     gameOver = checkStatus(board);
                     if (gameOver == 2)
                     {
-                        displayBoard(board, playerOneScore+1, playerTwoScore);
+                        displayBoard(board, playerOneScore+1, playerTwoScore, 0);
                         printf("Player one (X) wins\n");
                         return gameOver;
                     }
                     else if (gameOver == -2)
                     {
-                        displayBoard(board, playerOneScore, playerTwoScore+1);
+                        displayBoard(board, playerOneScore, playerTwoScore+1, 0);
                         printf("Player two (O) wins\n");
                         return gameOver;
                     }
@@ -304,7 +304,7 @@ void resetBoard(int board[BOARD_SIZE][BOARD_SIZE])
     }
 }
 
-void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore)
+void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int showPositions)
 {
     system("cls");
     printf("Tic Tac Toe (%dx%d)\n", BOARD_SIZE, BOARD_SIZE);
@@ -332,8 +332,15 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int pla
             counter++;
             if (board[i][j] == 0)
             {
-                //printf("|     |");
-                printf("|  %d  |", counter);
+                if (showPositions == 0)
+                {
+                    printf("|     |");
+                }
+                else 
+                {
+                    printf("|  %d  |", counter);
+                }
+                
             }
             else if (board[i][j] == 2)
             {
