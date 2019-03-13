@@ -7,14 +7,15 @@
 // Clear the buffer to avoid problems when game is reset
 #define CLEARBUF() char ch; while ((ch = getchar()) != '\n' && ch != EOF);
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int);
-void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int);
+int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int, int[BOARD_SIZE*BOARD_SIZE]);
+void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int, int[BOARD_SIZE*BOARD_SIZE]);
 void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int);
 int checkStatus(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkVertical(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE]);
+
 
 int main(void)
 {
@@ -25,9 +26,12 @@ int main(void)
     int playAgain = 0;
     srand( time(NULL) );
     int startingPlayer = rand() % 2;
+    // A stack for storing player moves
+    int moves[BOARD_SIZE*BOARD_SIZE] = {0};
+
     do {
         // Random player starts first game, then alternate
-        result = play(board, playerOneScore, playerTwoScore, startingPlayer);
+        result = play(board, playerOneScore, playerTwoScore, startingPlayer, moves);
         startingPlayer++;
         
         if (result == 2)
@@ -59,9 +63,9 @@ int main(void)
     return 0;
 }
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer)
+int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer, int moves[BOARD_SIZE*BOARD_SIZE])
 {
-    displayBoard(board, playerOneScore, playerTwoScore, 1);
+    displayBoard(board, playerOneScore, playerTwoScore, 1, moves);
     int gameOver = 0;
     int count = 0;
     int currentPlayer = 0;
@@ -118,18 +122,28 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                 int valid = updateBoard(board, input, currentPlayer);
                 if(valid != -1)
                 {
-                    displayBoard(board, playerOneScore, playerTwoScore, 0);
+                    if (currentPlayer == 2)
+                    {
+                        moves[count] = input;
+                    }
+                    else if (currentPlayer == -2)
+                    {
+                        moves[count] = (-1) * input;
+                    }
+                    
+                    
+                    displayBoard(board, playerOneScore, playerTwoScore, 0, moves);
                     count++;
                     gameOver = checkStatus(board);
                     if (gameOver == 2)
                     {
-                        displayBoard(board, playerOneScore+1, playerTwoScore, 0);
+                        displayBoard(board, playerOneScore+1, playerTwoScore, 0, moves);
                         printf("Player one (X) wins\n");
                         return gameOver;
                     }
                     else if (gameOver == -2)
                     {
-                        displayBoard(board, playerOneScore, playerTwoScore+1, 0);
+                        displayBoard(board, playerOneScore, playerTwoScore+1, 0, moves);
                         printf("Player two (O) wins\n");
                         return gameOver;
                     }
@@ -323,7 +337,7 @@ void resetBoard(int board[BOARD_SIZE][BOARD_SIZE])
     }
 }
 
-void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int showPositions)
+void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int showPositions, int moves[BOARD_SIZE*BOARD_SIZE])
 {
     system("cls");
     printf("Tic Tac Toe (%dx%d)\n", BOARD_SIZE, BOARD_SIZE);
@@ -386,4 +400,17 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int pla
         }
         printf("\n");
     }
+
+    for (int i=0; i < BOARD_SIZE*BOARD_SIZE; i++)
+    {
+        if(moves[i] == 0)
+        {
+            break;
+        }
+        else
+        {
+            printf("%d,", moves[i]);
+        }
+    }
+    printf("\n");
 }
