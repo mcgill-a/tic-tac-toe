@@ -100,22 +100,48 @@ int main(void)
         {
             playerTwoScore += 1;
         }
-        printf("Play again? Y/N\n");
-        char repeat;
-        scanf("%c", &repeat);
-        if(toupper(repeat) == 'Y')
+        
+        char repeat = 'A';
+        char userInput[5];
+        //scanf("%c", &repeat);
+        int done = 0;
+        do
         {
-            playAgain = 1;
-            // Reset the board
-            resetBoard(board);
-            fflush(stdin);
-            CLEARBUF()
-        }
-        else
-        {
-            playAgain = 0;
-            break;
-        }
+            displayBoard(board, playerOneScore, playerTwoScore, 1);
+            if (result == 2)
+            {
+                printf("Player one (X) wins\n");
+            }
+            else if (result == -2)
+            {
+                printf("Player two (O) wins\n");
+            }
+            else if (result == -1)
+            {
+                printf("Game ended in a draw\n");
+            }
+            
+            printf("Play again? Y/N\n");
+            fgets(userInput, 100, stdin);
+            repeat = toupper(userInput[0]);
+            switch (repeat)
+            {
+                case 'Y':
+                    playAgain = 1;
+                    // Reset the board
+                    resetBoard(board);
+                    fflush(stdin);
+                    CLEARBUF()
+                    done = 1;
+                    break;
+                case 'N':
+                    playAgain = 0;
+                    done = 1;
+                    break;
+                default:
+                    continue;
+            }
+        } while (done == 0);
     } while(playAgain == 1);
     
     return 0;
@@ -213,14 +239,14 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                         gameOver = checkStatus(board);
                         if (gameOver == 2)
                         {
-                            displayBoard(board, playerOneScore+1, playerTwoScore, 0);
-                            printf("Player one (X) wins\n");
+                            //displayBoard(board, playerOneScore+1, playerTwoScore, 0);
+                            //printf("Player one (X) wins\n");
                             return gameOver;
                         }
                         else if (gameOver == -2)
                         {
-                            displayBoard(board, playerOneScore, playerTwoScore+1, 0);
-                            printf("Player two (O) wins\n");
+                            //displayBoard(board, playerOneScore, playerTwoScore+1, 0);
+                            //printf("Player two (O) wins\n");
                             return gameOver;
                         }
                     }
