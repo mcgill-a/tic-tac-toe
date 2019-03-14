@@ -226,7 +226,9 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                     }
                     else
                     {
+                        displayBoard(board, playerOneScore, playerTwoScore, 0);
                         printf("Position %d is already taken\n", input);
+                        break;
                     }
                 }
                 else
