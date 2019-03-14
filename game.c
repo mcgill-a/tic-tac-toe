@@ -168,6 +168,7 @@ int playerVsPlayer()
     do {
         // Random player starts first game, then alternate
         result = play(board, playerOneScore, playerTwoScore, startingPlayer, &moveStack, &redoStack);
+        /*
         int *i = NULL;
         i = pop(&moveStack);
         printf("POP: ");
@@ -185,6 +186,7 @@ int playerVsPlayer()
             while(i != NULL);
         }
         printf("\n");
+        */
 
         startingPlayer++;
         
@@ -320,7 +322,7 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                 if (popped != NULL)
                 {
                     push(moveStack, *popped);
-                    //count++;
+                    count++;
                     updateBoard(board, *popped, currentPlayer, 0);
                     displayBoard(board, playerOneScore, playerTwoScore, 0);
                     currentPlayer *= -1;
