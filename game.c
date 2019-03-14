@@ -4,10 +4,10 @@
 #include <time.h>
 
 #define BOARD_SIZE 3
-// Clear the buffer to avoid problems when game is reset
+// Clear the buffer to avoid problems with input when game is reset
 #define CLEARBUF() char ch; while ((ch = getchar()) != '\n' && ch != EOF);
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int, int[BOARD_SIZE*BOARD_SIZE]);
+int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int, int[BOARD_SIZE*BOARD_SIZE], struct stack*);
 void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int, int[BOARD_SIZE*BOARD_SIZE]);
 void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int);
@@ -15,7 +15,45 @@ int checkStatus(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkVertical(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE]);
+void push(struct stack*, int);
+void *pop(struct stack*);
 
+struct stack
+{
+    int moves[BOARD_SIZE*BOARD_SIZE];
+    int top;
+};
+
+void init_stack(struct stack *s)
+{
+    s->top = -1;
+}
+
+void push(struct stack *s, int item)
+{
+    if (s->top == (BOARD_SIZE*BOARD_SIZE)-1)
+    {
+        printf("Stack is full. Couldn't push %d onto stack\n", item);
+        return;
+    }
+    s->top++;
+    s->moves[s->top] = item;
+    //printf("Push: %d\n", item);
+}
+
+void *pop(struct stack *s)
+{
+    int *data;
+    if (s->top == -1)
+    {
+        //printf("Stack is empty\n");
+        return NULL;
+    }
+    data = &s->moves[s->top];
+    s->top--;
+    //printf("Pop: %p\n", data);
+    return data;
+}
 
 int main(void)
 {
@@ -28,10 +66,30 @@ int main(void)
     int startingPlayer = rand() % 2;
     // A stack for storing player moves
     int moves[BOARD_SIZE*BOARD_SIZE] = {0};
+    struct stack moveStack;
+    init_stack(&moveStack);
 
     do {
         // Random player starts first game, then alternate
-        result = play(board, playerOneScore, playerTwoScore, startingPlayer, moves);
+        result = play(board, playerOneScore, playerTwoScore, startingPlayer, moves, &moveStack);
+        int *i = NULL;
+        i = pop(&moveStack);
+        printf("POP: ");
+        if(i != NULL)
+        {
+            do
+            {
+                printf("%d ", *i);
+                i = pop(&moveStack);
+                if (i != NULL)
+                {
+                    printf(">> ");
+                }
+            }
+            while(i != NULL);
+        }
+        printf("\n");
+
         startingPlayer++;
         
         if (result == 2)
@@ -63,7 +121,7 @@ int main(void)
     return 0;
 }
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer, int moves[BOARD_SIZE*BOARD_SIZE])
+int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer, int moves[BOARD_SIZE*BOARD_SIZE], struct stack *moveStack)
 {
     displayBoard(board, playerOneScore, playerTwoScore, 1, moves);
     int gameOver = 0;
@@ -125,10 +183,12 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                     if (currentPlayer == 2)
                     {
                         moves[count] = input;
+                        push(moveStack, input);
                     }
                     else if (currentPlayer == -2)
                     {
                         moves[count] = (-1) * input;
+                        push(moveStack, (-1) * input);
                     }
                     
                     
@@ -303,11 +363,11 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
     */
 
    // Loop through the right diagonal values
-    for(int i = BOARD_SIZE-1; i < BOARD_SIZE * BOARD_SIZE; i += (BOARD_SIZE - 1))
+    for(int i = BOARD_SIZE-1; i < BOARD_SIZE * BOARD_SIZE - (BOARD_SIZE-1); i += (BOARD_SIZE - 1))
     {
         row = ((i - 1) / BOARD_SIZE + 1) - 1;
         column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - (i+1));
-        leftDiagonal += board[row][column];       
+        leftDiagonal += board[row][column];
     }
 
     if (leftDiagonal == BOARD_SIZE * 2)
