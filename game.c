@@ -8,6 +8,21 @@
 // Clear the buffer to avoid problems with input when game is reset
 #define CLEARBUF() char ch; while ((ch = getchar()) != '\n' && ch != EOF);
 
+const char * options[] = {
+        "Player vs Player",
+        "Player vs Computer (N/A)",
+        "Change Board Size (N/A)",
+        "Leaderboards (N/A)",
+        "Previous Matches (N/A)",
+        "Export Results (CSV) (N/A)",
+        "Exit",
+};
+
+#define OPTION_COUNT (sizeof (options) / sizeof (const char *))
+
+void interact();
+void displayMenuOptions();
+
 int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int, struct stack*);
 void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int);
 void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
@@ -58,6 +73,68 @@ void *pop(struct stack *s)
 
 int main(void)
 {
+    char userInput[5];
+    int option = -1;
+    displayMenuOptions();
+    do
+    {
+        fgets(userInput, 100, stdin);
+        option = atoi(userInput);
+        switch (option)
+        {
+            case 1:
+                playerVsPlayer();
+                break;
+            case 2:
+                displayMenuOptions();
+                printf("Selected 2\n");
+                break;
+            case 3:
+                displayMenuOptions();
+                printf("Selected 3\n");
+                break;
+            case 4:
+                displayMenuOptions();
+                printf("Selected 4\n");
+                break;
+            case 5:
+                displayMenuOptions();
+                printf("Selected 5\n");
+                break;
+            case 6:
+                displayMenuOptions();
+                printf("Selected 6\n");
+                break;
+            case OPTION_COUNT:
+                displayMenuOptions();
+                printf("Selected Exit\n");
+                break;
+            default:
+                displayMenuOptions();
+                printf("[Error] Invalid option selected. Please enter a value between 1-%d:\n", OPTION_COUNT);
+                break;
+        }
+    } while (option != 7);
+
+    return 0;
+}
+
+void displayMenuOptions()
+{
+    system("cls");
+    printf("Tic Tac Toe by Alex McGill\n\n");
+    printf("MAIN MENU:\n"); 
+    
+    int i;
+    for (i=0; i < OPTION_COUNT; i++)
+    {
+        printf("[%d] %s\n", i+1, options[i]);
+    }
+    printf("\n");
+}
+
+int playerVsPlayer()
+{
     int board[BOARD_SIZE][BOARD_SIZE] = {0}; 
     int playerOneScore = 0;
     int playerTwoScore = 0;
@@ -103,7 +180,6 @@ int main(void)
         
         char repeat = 'A';
         char userInput[5];
-        //scanf("%c", &repeat);
         int done = 0;
         do
         {
@@ -120,7 +196,7 @@ int main(void)
             {
                 printf("Game ended in a draw\n");
             }
-            
+
             printf("Play again? Y/N\n");
             fgets(userInput, 100, stdin);
             repeat = toupper(userInput[0]);
@@ -137,6 +213,7 @@ int main(void)
                 case 'N':
                     playAgain = 0;
                     done = 1;
+                    displayMenuOptions();
                     break;
                 default:
                     continue;
@@ -239,14 +316,10 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                         gameOver = checkStatus(board);
                         if (gameOver == 2)
                         {
-                            //displayBoard(board, playerOneScore+1, playerTwoScore, 0);
-                            //printf("Player one (X) wins\n");
                             return gameOver;
                         }
                         else if (gameOver == -2)
                         {
-                            //displayBoard(board, playerOneScore, playerTwoScore+1, 0);
-                            //printf("Player two (O) wins\n");
                             return gameOver;
                         }
                     }
@@ -303,9 +376,7 @@ int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int position, int value, int 
         {
             return -1;
         }
-    }
-    
-    
+    }    
 }
 
 int checkStatus(int board[BOARD_SIZE][BOARD_SIZE])

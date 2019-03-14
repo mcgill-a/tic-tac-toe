@@ -12,7 +12,7 @@ const char * options[] = {
 
 #define OPTION_COUNT (sizeof (options) / sizeof (const char *))
 
-void displayOptions();
+void displayMenuOptions();
 void interact();
 
 int main(void)
@@ -25,7 +25,7 @@ void interact()
 {
     char userInput[5];
     int option = -1;
-    displayOptions();
+    displayMenuOptions();
     do
     {
         fgets(userInput, 100, stdin);
@@ -33,41 +33,41 @@ void interact()
         switch (option)
         {
             case 1:
-                displayOptions();
-                printf("Selected 1\n");
+                playerVsPlayer();
                 break;
             case 2:
-                displayOptions();
+                displayMenuOptions();
                 printf("Selected 2\n");
                 break;
             case 3:
-                displayOptions();
+                displayMenuOptions();
                 printf("Selected 3\n");
                 break;
             case 4:
-                displayOptions();
+                displayMenuOptions();
                 printf("Selected 4\n");
                 break;
             case 5:
-                displayOptions();
+                displayMenuOptions();
                 printf("Selected 5\n");
                 break;
             case 6:
-                displayOptions();
+                displayMenuOptions();
                 printf("Selected 6\n");
                 break;
             case OPTION_COUNT:
+                displayMenuOptions();
                 printf("Selected Exit\n");
                 break;
             default:
-                displayOptions();
+                displayMenuOptions();
                 printf("[Error] Invalid option selected. Please enter a value between 1-%d:\n", OPTION_COUNT);
                 break;
         }
-    } while (option < 1 || option > OPTION_COUNT);
+    } while (option != 7);
 }
 
-void displayOptions()
+void displayMenuOptions()
 {
     system("cls");
     printf("Tic Tac Toe by Alex McGill\n\n");
