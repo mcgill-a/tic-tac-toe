@@ -23,7 +23,7 @@ const char * options[] = {
 void interact();
 void displayMenuOptions();
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int, struct stack*);
+int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int, struct stack*, struct stack*);
 void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int);
 void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int, int);
@@ -33,6 +33,7 @@ int checkVertical(int board[BOARD_SIZE][BOARD_SIZE]);
 int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE]);
 void push(struct stack*, int);
 void *pop(struct stack*);
+void *pop_all(struct stack*);
 
 struct stack
 {
@@ -68,6 +69,22 @@ void *pop(struct stack *s)
     data = &s->moves[s->top];
     s->top--;
     //printf("Pop: %p\n", data);
+    return data;
+}
+
+void *pop_all(struct stack *s)
+{
+    int *data;
+    if (s->top == -1)
+    {
+        return NULL;
+    }
+    while (s->top != -1)
+    {
+        data = &s->moves[s->top];
+        s->top--;
+    }
+    
     return data;
 }
 
@@ -144,11 +161,13 @@ int playerVsPlayer()
     int startingPlayer = rand() % 2;
     // A stack for storing player moves
     struct stack moveStack;
+    struct stack redoStack;
     init_stack(&moveStack);
+    init_stack(&redoStack);
 
     do {
         // Random player starts first game, then alternate
-        result = play(board, playerOneScore, playerTwoScore, startingPlayer, &moveStack);
+        result = play(board, playerOneScore, playerTwoScore, startingPlayer, &moveStack, &redoStack);
         int *i = NULL;
         i = pop(&moveStack);
         printf("POP: ");
@@ -183,7 +202,7 @@ int playerVsPlayer()
         int done = 0;
         do
         {
-            displayBoard(board, playerOneScore, playerTwoScore, 1);
+            displayBoard(board, playerOneScore, playerTwoScore, 0);
             if (result == 2)
             {
                 printf("Player one (X) wins\n");
@@ -224,7 +243,7 @@ int playerVsPlayer()
     return 0;
 }
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer, struct stack *moveStack)
+int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer, struct stack *moveStack, struct stack *redoStack)
 {
     displayBoard(board, playerOneScore, playerTwoScore, 1);
     int gameOver = 0;
@@ -280,14 +299,37 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                 popped = pop(moveStack);
                 if (popped != NULL)
                 {
+                    push(redoStack, *popped);
                     count--;
                     currentPlayer *= -1;
                     updateBoard(board, *popped, currentPlayer, 1);
                     displayBoard(board, playerOneScore, playerTwoScore, 0);
+                    break;
                 }
                 else
                 {
+                    displayBoard(board, playerOneScore, playerTwoScore, 0);
                     printf("Nothing to undo\n");
+                    break;
+                }
+            }
+            else if (strcmp(buf, "redo") == 0)
+            {
+                int *popped = NULL;
+                popped = pop(redoStack);
+                if (popped != NULL)
+                {
+                    push(moveStack, *popped);
+                    //count++;
+                    updateBoard(board, *popped, currentPlayer, 0);
+                    displayBoard(board, playerOneScore, playerTwoScore, 0);
+                    currentPlayer *= -1;
+                    break;
+                }
+                else
+                {
+                    displayBoard(board, playerOneScore, playerTwoScore, 0);
+                    printf("Nothing to redo\n");
                     break;
                 }
             }
@@ -299,6 +341,8 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                     int valid = updateBoard(board, input, currentPlayer, 0);
                     if(valid != -1)
                     {
+                        // Clear the redo stack after a new move otherwise problems will occur
+                        pop_all(redoStack);
                         if (currentPlayer == 2)
                         {
                             push(moveStack, input);
@@ -309,8 +353,6 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                             push(moveStack, (-1) * input);
                             currentPlayer = 2;
                         }
-                        
-                        
                         displayBoard(board, playerOneScore, playerTwoScore, 0);
                         count++;
                         gameOver = checkStatus(board);
@@ -340,7 +382,6 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
         }
         while (end != buf + strlen(buf));
     }
-
     return -1;
 }
 
@@ -382,26 +423,24 @@ int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int position, int value, int 
 int checkStatus(int board[BOARD_SIZE][BOARD_SIZE])
 {
     int status = 0;
-
     // Check for a horizontal win
     status = checkHorizontal(board);
     if(status != 0)
     {
         return status;
     }
-
+    // Check for a vertical win
     status = checkVertical(board);
     if(status != 0)
     {
         return status;
     }
-
+    // Check for a diagonal win
     status = checkDiagonal(board);
     if(status != 0)
     {
         return status;
     }
-
     //  0 >> No winner
     // +2 >> X wins
     // -2 >> O wins
@@ -560,6 +599,7 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int pla
             counter++;
             if (board[i][j] == 0)
             {
+                // Switch between showing number positons on the board
                 if (showPositions == 0)
                 {
                     printf("|     |");
