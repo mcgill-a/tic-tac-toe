@@ -14,7 +14,6 @@ const char * options[] = {
         "Change Board Size (N/A)",
         "Leaderboards (N/A)",
         "Previous Matches (N/A)",
-        "Export Results (CSV) (N/A)",
         "Exit",
 };
 
@@ -34,6 +33,7 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE]);
 void push(struct stack*, int);
 void *pop(struct stack*);
 void *pop_all(struct stack*);
+void storeResults(struct stack*, int, int);
 
 struct stack
 {
@@ -44,48 +44,6 @@ struct stack
 void init_stack(struct stack *s)
 {
     s->top = -1;
-}
-
-void push(struct stack *s, int item)
-{
-    if (s->top == (BOARD_SIZE*BOARD_SIZE)-1)
-    {
-        printf("Stack is full. Couldn't push %d onto stack\n", item);
-        return;
-    }
-    s->top++;
-    s->moves[s->top] = item;
-    //printf("Push: %d\n", item);
-}
-
-void *pop(struct stack *s)
-{
-    int *data;
-    if (s->top == -1)
-    {
-        //printf("Stack is empty\n");
-        return NULL;
-    }
-    data = &s->moves[s->top];
-    s->top--;
-    //printf("Pop: %p\n", data);
-    return data;
-}
-
-void *pop_all(struct stack *s)
-{
-    int *data;
-    if (s->top == -1)
-    {
-        return NULL;
-    }
-    while (s->top != -1)
-    {
-        data = &s->moves[s->top];
-        s->top--;
-    }
-    
-    return data;
 }
 
 int main(void)
@@ -117,10 +75,6 @@ int main(void)
             case 5:
                 displayMenuOptions();
                 printf("Selected 5\n");
-                break;
-            case 6:
-                displayMenuOptions();
-                printf("Selected 6\n");
                 break;
             case OPTION_COUNT:
                 displayMenuOptions();
@@ -167,27 +121,8 @@ int playerVsPlayer()
 
     do {
         // Random player starts first game, then alternate
-        result = play(board, playerOneScore, playerTwoScore, startingPlayer, &moveStack, &redoStack);
-        /*
-        int *i = NULL;
-        i = pop(&moveStack);
-        printf("POP: ");
-        if(i != NULL)
-        {
-            do
-            {
-                printf("%d ", *i);
-                i = pop(&moveStack);
-                if (i != NULL)
-                {
-                    printf(">> ");
-                }
-            }
-            while(i != NULL);
-        }
-        printf("\n");
-        */
-
+        result = play(board, playerOneScore, playerTwoScore, startingPlayer, &moveStack, &redoStack);     // write results to file 
+        storeResults(&moveStack, result, 1);
         startingPlayer++;
         
         if (result == 2)
@@ -637,4 +572,89 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int pla
         }
         printf("\n");
     }
+}
+
+void push(struct stack *s, int item)
+{
+    if (s->top == (BOARD_SIZE*BOARD_SIZE)-1)
+    {
+        printf("Stack is full. Couldn't push %d onto stack\n", item);
+        return;
+    }
+    s->top++;
+    s->moves[s->top] = item;
+    //printf("Push: %d\n", item);
+}
+
+void *pop(struct stack *s)
+{
+    int *data;
+    if (s->top == -1)
+    {
+        //printf("Stack is empty\n");
+        return NULL;
+    }
+    data = &s->moves[s->top];
+    s->top--;
+    //printf("Pop: %p\n", data);
+    return data;
+}
+
+void *pop_all(struct stack *s)
+{
+    int *data;
+    if (s->top == -1)
+    {
+        return NULL;
+    }
+    while (s->top != -1)
+    {
+        data = &s->moves[s->top];
+        s->top--;
+    }
+    
+    return NULL;
+}
+
+void storeResults(struct stack *moveStack, int result, int mode)
+{  
+    time_t timer;
+    char currentDateTime[26];
+    struct tm* tm_info;
+
+    time(&timer);
+    tm_info = localtime(&timer);
+
+    strftime(currentDateTime, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+    int moves[BOARD_SIZE*BOARD_SIZE] = {0};
+
+    int *i = NULL;
+    i = pop(moveStack);
+    int count = 0;
+
+    FILE *output = NULL;
+    char outputName[50] = "tic-tac-toe results.csv";
+    output = fopen(outputName, "a");
+    fprintf(output, "%s,%d,%d,", currentDateTime, result, mode);
+    if(i != NULL)
+    {
+        char space = ' ';
+        char newline = '\n';
+        do
+        {
+            fprintf(output, "%d", *i);
+            i = pop(moveStack);
+            if (i != NULL)
+            {
+                
+                fprintf(output, "%c",space);
+            }
+            else
+            {
+                fprintf(output, "%c", newline);
+            }
+        }
+        while(i != NULL);
+    }
+    fclose(output);
 }
