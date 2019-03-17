@@ -79,6 +79,7 @@ int main(void)
             case OPTION_COUNT:
                 displayMenuOptions();
                 printf("Selected Exit\n");
+                exit(0);
                 break;
             default:
                 displayMenuOptions();
