@@ -4,20 +4,29 @@
 #include <time.h>
 #include <string.h>
 
-#define BOARD_SIZE 3
-// Clear the buffer to avoid problems with input when game is reset
-#define CLEARBUF() char ch; while ((ch = getchar()) != '\n' && ch != EOF);
-
 const char * options[] = {
         "Player vs Player",
         "Player vs Computer (N/A)",
         "Change Board Size (N/A)",
         "Leaderboards (N/A)",
-        "Previous Matches (N/A)",
+        "Match History",
+        "Replay Matches (N/A)",
         "Exit",
 };
 
 #define OPTION_COUNT (sizeof (options) / sizeof (const char *))
+#define BOARD_SIZE 3
+// Clear the buffer to avoid problems with input when game is reset
+#define CLEARBUF() char ch; while ((ch = getchar()) != '\n' && ch != EOF);
+
+typedef struct
+{
+    char date[50];
+    int mode;
+    int result;
+    int moves[1000];
+    int moveCount;
+} Result;
 
 void interact();
 void displayMenuOptions();
@@ -34,7 +43,10 @@ void push(struct stack*, int);
 void *pop(struct stack*);
 void *pop_all(struct stack*);
 void storeResults(struct stack*, int, int);
-void loadResults();
+void loadResults(int*, Result*);
+void processResults(int*, Result*);
+void removeNewline(char*);
+
 struct stack
 {
     int moves[BOARD_SIZE*BOARD_SIZE];
@@ -74,7 +86,16 @@ int main(void)
                 break;
             case 5:
                 displayMenuOptions();
-                loadResults();
+                printf("Previous Matches:\n\n");
+                int count = 0;
+                Result* results = (Result*) malloc(sizeof(Result)  * 100);
+                loadResults(&count, results);
+                processResults(&count, results);
+                free(results); 
+                break;
+            case 6:
+                displayMenuOptions();
+                printf("Selected 6\n");
                 break;
             case OPTION_COUNT:
                 displayMenuOptions();
@@ -89,6 +110,11 @@ int main(void)
     } while (option != 7);
 
     return 0;
+}
+
+void removeNewline(char *s) {
+    while(*s && *s != '\n' && *s != '\r') s++;
+    *s = 0;
 }
 
 void displayMenuOptions()
@@ -660,8 +686,114 @@ void storeResults(struct stack *moveStack, int result, int mode)
     fclose(output);
 }
 
-void loadResults()
+void loadResults(int *count, Result* results)
 {
-    printf("Previous Results\n");
-    printf("Date | Mode | Result | Moves\n");
+    FILE* resultsFile = fopen("tic-tac-toe_results.csv", "r");
+    char row[1024];
+
+    while (fgets(row, 1024, resultsFile))
+    {
+        removeNewline(row);
+        char *p = strtok (strdup(row), ",");
+        char *array[4];
+        int i = 0;
+        // Split the current row into the char array
+        while (p != NULL)
+        {
+            array[i++] = p;
+            p = strtok (NULL, ",");
+        }       
+        
+        char *charMoves = strtok (strdup(array[3]), " ");
+        // [BOARD_SIZE * BOARD_SIZE]
+        int intMoves[1000];
+        // Split array[3] by " "
+        // Convert each value to int
+        // Add move to int array
+        i = 0;
+        while (charMoves != NULL)
+        {
+            intMoves[i++] = atoi(charMoves);
+            charMoves = strtok (NULL, " ");
+        }
+
+        Result temp;
+        strcpy(temp.date, array[0]);
+        temp.mode = atoi(array[1]);
+        temp.result = atoi(array[2]);
+        memcpy(temp.moves, intMoves, sizeof(temp.moves)); 
+        temp.moveCount = i;
+        results[*count] = temp;
+        *count += 1;
+    }
+}
+
+void processResults(int *count, Result* results)
+{
+    int playerOneWins = 0, playerTwoWins = 0;
+    int gamesPlayed = *count, gamesTied = 0;
+
+    for (int i = 0; i < *count; i++)
+    {
+        if (results[i].result == 2)
+        {
+            playerOneWins++;
+        }
+        else if (results[i].result == -2)
+        {
+            playerTwoWins++;
+        }
+        else if (results[i].result == -1)
+        {
+            gamesTied++;
+        }
+    }
+    
+    printf("Games Played: %d | Games Tied: %d\n", gamesPlayed, gamesTied);
+    printf("Player 1 (X) Wins: %d | Player 2 (O) Wins: %d\n\n", playerOneWins, playerTwoWins);
+    // Print previous matches
+    printf("# |         DATE        | MODE | RESULT | MOVES\n");
+    for (int i = 0; i < *count; i++)
+    {
+        // NUMBER AND DATE
+        printf("%d | %s | ", i, results[i].date);
+        
+        // MODE
+        if (results[i].mode == 1)
+        {
+            printf("PVP  | ");
+        }
+        else if (results[i].mode == 2)
+        {
+            printf("PVE  | ");
+        }
+
+        // RESULT
+        if (results[i].result == 2)
+        {
+            printf("X WINS | ");
+        }
+        else if (results[i].result == -2)
+        {
+            printf("O WINS | ");
+        }
+        else if (results[i].result == -1)
+        {
+            printf(" TIED  | ");
+        }
+
+        // MOVES
+        for (int j = results[i].moveCount - 1; j >= 0; j--)
+        {
+            if (results[i].moves[j] < 0) 
+            {
+                printf("O%d ", (results[i].moves[j] * -1));
+            }
+            else
+            {
+                printf("X%d ", results[i].moves[j]);
+            }
+        }
+        printf("\n");
+    }
 }
