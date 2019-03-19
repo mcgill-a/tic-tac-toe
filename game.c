@@ -732,6 +732,7 @@ void processResults(int *count, Result* results)
 {
     int playerOneWins = 0, playerTwoWins = 0;
     int gamesPlayed = *count, gamesTied = 0;
+    double playerOneWinPercentage = 0, playerTwoWinpercentage = 0;
 
     for (int i = 0; i < *count; i++)
     {
@@ -748,9 +749,13 @@ void processResults(int *count, Result* results)
             gamesTied++;
         }
     }
+
+    playerOneWinPercentage = (float)playerOneWins / gamesPlayed * 100.0;
+    playerTwoWinpercentage = (float)playerTwoWins / gamesPlayed * 100.0;
     
     printf("Games Played: %d | Games Tied: %d\n", gamesPlayed, gamesTied);
-    printf("Player 1 (X) Wins: %d | Player 2 (O) Wins: %d\n\n", playerOneWins, playerTwoWins);
+    printf("X Wins: %d (%.2f%%) | O Wins: %d (%.2f%%)\n\n", playerOneWins, playerOneWinPercentage, playerTwoWins, playerTwoWinpercentage);
+    
     // Print previous matches
     printf("# |         DATE        | MODE | RESULT | MOVES\n");
     for (int i = 0; i < *count; i++)
