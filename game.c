@@ -34,7 +34,7 @@ void push(struct stack*, int);
 void *pop(struct stack*);
 void *pop_all(struct stack*);
 void storeResults(struct stack*, int, int);
-
+void loadResults();
 struct stack
 {
     int moves[BOARD_SIZE*BOARD_SIZE];
@@ -74,7 +74,7 @@ int main(void)
                 break;
             case 5:
                 displayMenuOptions();
-                printf("Selected 5\n");
+                loadResults();
                 break;
             case OPTION_COUNT:
                 displayMenuOptions();
@@ -634,9 +634,9 @@ void storeResults(struct stack *moveStack, int result, int mode)
     int count = 0;
 
     FILE *output = NULL;
-    char outputName[50] = "tic-tac-toe results.csv";
+    char outputName[50] = "tic-tac-toe_results.csv";
     output = fopen(outputName, "a");
-    fprintf(output, "%s,%d,%d,", currentDateTime, result, mode);
+    fprintf(output, "%s,%d,%d,", currentDateTime, mode, result);
     if(i != NULL)
     {
         char space = ' ';
@@ -658,4 +658,10 @@ void storeResults(struct stack *moveStack, int result, int mode)
         while(i != NULL);
     }
     fclose(output);
+}
+
+void loadResults()
+{
+    printf("Previous Results\n");
+    printf("Date | Mode | Result | Moves\n");
 }
