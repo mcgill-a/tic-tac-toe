@@ -86,7 +86,6 @@ int main(void)
                 break;
             case 5:
                 displayMenuOptions();
-                printf("Previous Matches:\n\n");
                 int count = 0;
                 Result* results = (Result*) malloc(sizeof(Result)  * 100);
                 loadResults(&count, results);
@@ -686,9 +685,27 @@ void storeResults(struct stack *moveStack, int result, int mode)
     fclose(output);
 }
 
+int fileExists(const char *fileName)
+{
+    FILE *file;
+    if ((file = fopen(fileName, "r")))
+    {
+        fclose(file);
+        return 1;
+    }
+    return 0;
+}
+
 void loadResults(int *count, Result* results)
 {
-    FILE* resultsFile = fopen("tic-tac-toe_results.csv", "r");
+    char fileName[50] = "tic-tac-toe_results.csv";
+    // Make sure the file exists
+    if (fileExists(fileName) != 1)
+    {
+        return;
+    }
+
+    FILE* resultsFile = fopen(fileName, "r");
     char row[1024];
 
     while (fgets(row, 1024, resultsFile))
@@ -749,56 +766,69 @@ void processResults(int *count, Result* results)
             gamesTied++;
         }
     }
-
-    playerOneWinPercentage = (float)playerOneWins / gamesPlayed * 100.0;
-    playerTwoWinpercentage = (float)playerTwoWins / gamesPlayed * 100.0;
-    
-    printf("Games Played: %d | Games Tied: %d\n", gamesPlayed, gamesTied);
-    printf("X Wins: %d (%.2f%%) | O Wins: %d (%.2f%%)\n\n", playerOneWins, playerOneWinPercentage, playerTwoWins, playerTwoWinpercentage);
-    
-    // Print previous matches
-    printf("# |         DATE        | MODE | RESULT | MOVES\n");
-    for (int i = 0; i < *count; i++)
+    if (playerOneWins != 0)
     {
-        // NUMBER AND DATE
-        printf("%d | %s | ", i, results[i].date);
+        playerOneWinPercentage = (float)playerOneWins / gamesPlayed * 100.0;
+    }
+    
+    if (playerTwoWins != 0)
+    {
+        playerTwoWinpercentage = (float)playerTwoWins / gamesPlayed * 100.0;
+    }
+    if (gamesPlayed == 0)
+    {
+        printf("No matches found.\n");
+    }
+    else
+    {
+        printf("Previous Matches:\n\n");
+        printf("Games Played: %d | Games Tied: %d\n", gamesPlayed, gamesTied);
+        printf("X Wins: %d (%.0f%%) | O Wins: %d (%.0f%%)\n\n", playerOneWins, playerOneWinPercentage, playerTwoWins, playerTwoWinpercentage);
         
-        // MODE
-        if (results[i].mode == 1)
+        // Print previous matches
+        printf("# |         DATE        | MODE | RESULT | MOVES\n");
+        for (int i = 0; i < *count; i++)
         {
-            printf("PVP  | ");
-        }
-        else if (results[i].mode == 2)
-        {
-            printf("PVE  | ");
-        }
-
-        // RESULT
-        if (results[i].result == 2)
-        {
-            printf("X WINS | ");
-        }
-        else if (results[i].result == -2)
-        {
-            printf("O WINS | ");
-        }
-        else if (results[i].result == -1)
-        {
-            printf(" TIED  | ");
-        }
-
-        // MOVES
-        for (int j = results[i].moveCount - 1; j >= 0; j--)
-        {
-            if (results[i].moves[j] < 0) 
+            // NUMBER AND DATE
+            printf("%d | %s | ", i, results[i].date);
+            
+            // MODE
+            if (results[i].mode == 1)
             {
-                printf("O%d ", (results[i].moves[j] * -1));
+                printf("PVP  | ");
             }
-            else
+            else if (results[i].mode == 2)
             {
-                printf("X%d ", results[i].moves[j]);
+                printf("PVE  | ");
             }
+
+            // RESULT
+            if (results[i].result == 2)
+            {
+                printf("X WINS | ");
+            }
+            else if (results[i].result == -2)
+            {
+                printf("O WINS | ");
+            }
+            else if (results[i].result == -1)
+            {
+                printf(" TIED  | ");
+            }
+
+            // MOVES
+            for (int j = results[i].moveCount - 1; j >= 0; j--)
+            {
+                if (results[i].moves[j] < 0) 
+                {
+                    printf("O%d ", (results[i].moves[j] * -1));
+                }
+                else
+                {
+                    printf("X%d ", results[i].moves[j]);
+                }
+            }
+            printf("\n");
         }
-        printf("\n");
     }
 }
