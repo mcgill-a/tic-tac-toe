@@ -3,14 +3,14 @@
 #include <ctype.h>
 #include <time.h>
 #include <string.h>
+#include <windows.h>
 
 const char * options[] = {
         "Player vs Player",
         "Player vs Computer (N/A)",
         "Change Board Size (N/A)",
-        "Leaderboards (N/A)",
         "Match History",
-        "Replay Matches (N/A)",
+        "Replay Match",
         "Exit",
 };
 
@@ -43,9 +43,13 @@ void push(struct stack*, int);
 void *pop(struct stack*);
 void *pop_all(struct stack*);
 void storeResults(struct stack*, int, int);
+int fileExists(const char*);
 void loadResults(int*, Result*);
 void processResults(int*, Result*);
 void removeNewline(char*);
+void replayMatch(Result, int);
+void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int);
+void getMatchNumber();
 
 struct stack
 {
@@ -62,6 +66,7 @@ int main(void)
 {
     char userInput[5];
     int option = -1;
+    
     displayMenuOptions();
     do
     {
@@ -82,19 +87,17 @@ int main(void)
                 break;
             case 4:
                 displayMenuOptions();
-                printf("Selected 4\n");
-                break;
-            case 5:
-                displayMenuOptions();
                 int count = 0;
                 Result* results = (Result*) malloc(sizeof(Result)  * 100);
                 loadResults(&count, results);
                 processResults(&count, results);
                 free(results); 
                 break;
-            case 6:
+            case 5:
                 displayMenuOptions();
-                printf("Selected 6\n");
+                //printf("Selected 6\n");
+                //printf("Please enter a previous match number\n");
+                getMatchNumber();
                 break;
             case OPTION_COUNT:
                 displayMenuOptions();
@@ -103,7 +106,7 @@ int main(void)
                 break;
             default:
                 displayMenuOptions();
-                printf("[Error] Invalid option selected. Please enter a value between 1-%d:\n", OPTION_COUNT);
+                printf("Please enter a value between 1-%d:\n", OPTION_COUNT);
                 break;
         }
     } while (option != 7);
@@ -147,7 +150,8 @@ int playerVsPlayer()
 
     do {
         // Random player starts first game, then alternate
-        result = play(board, playerOneScore, playerTwoScore, startingPlayer, &moveStack, &redoStack);     // write results to file 
+        result = play(board, playerOneScore, playerTwoScore, startingPlayer, &moveStack, &redoStack);
+        // Write results to file 
         storeResults(&moveStack, result, 1);
         startingPlayer++;
         
@@ -539,6 +543,7 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int pla
     system("cls");
     printf("Tic Tac Toe (%dx%d)\n", BOARD_SIZE, BOARD_SIZE);
     printf("SCORE: (X) %d - %d (O)\n", playerOneScore, playerTwoScore);
+    
     // Top edge
     for (int i=0; i < BOARD_SIZE; i++)
     {
@@ -790,7 +795,7 @@ void processResults(int *count, Result* results)
         for (int i = 0; i < *count; i++)
         {
             // NUMBER AND DATE
-            printf("%d | %s | ", i, results[i].date);
+            printf("%d | %s | ", i+1, results[i].date);
             
             // MODE
             if (results[i].mode == 1)
@@ -830,5 +835,112 @@ void processResults(int *count, Result* results)
             }
             printf("\n");
         }
+    }
+    printf("\n");
+}
+
+void getMatchNumber()
+{
+    int count = 0;
+    Result* results = (Result*) malloc(sizeof(Result)  * 100);
+    loadResults(&count, results);
+    if (count == 0)
+    {
+        printf("No matches found\n");
+    }
+    else
+    {
+        char userInput[5];
+        int option = -1;
+        
+        do
+        {
+            displayMenuOptions();
+            printf("Please enter a previous match number to replay (1-%d):\n", count);
+            fgets(userInput, 100, stdin);
+            option = atoi(userInput);
+        } while (option < 1 || option > count);
+        replayMatch(results[option-1], option);
+        free(results);
+    }
+}
+
+void replayMatch(Result result, int matchNumber)
+{
+    int board[BOARD_SIZE][BOARD_SIZE] = {0};
+    int currentPlayer = 0;
+    for (int i = result.moveCount - 1; i >= 0; i--)
+    {
+        if (result.moves[i] < 0)
+        {
+            currentPlayer = -2;
+        }
+        else
+        {
+            currentPlayer = 2;
+        }
+        replayMatchDisplay(board, matchNumber);
+        Sleep(1500);
+        updateBoard(board, result.moves[i], currentPlayer, 0);
+    }
+    replayMatchDisplay(board, matchNumber);
+    printf("Match Replay Completed.\n");
+    Sleep(3000);
+    displayMenuOptions();
+}
+
+void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int matchNumber)
+{
+    displayMenuOptions();
+    printf("REPLAY OF MATCH #%d\n", matchNumber);
+    // Top edge
+    for (int i=0; i < BOARD_SIZE; i++)
+    {
+        printf("=======");
+    }
+    printf("\n");
+
+    int counter = 0;
+    for (int i=0; i < BOARD_SIZE; i++)
+    {
+        // Spacer 1
+        for (int j=0; j < BOARD_SIZE; j++)
+        {
+            printf("|     |");
+        }
+        printf("\n");
+
+        // Block value
+        for (int j=0; j < BOARD_SIZE; j++)
+        {
+            counter++;
+            if (board[i][j] == 0)
+            {
+                printf("|     |");
+            }
+            else if (board[i][j] == 2)
+            {
+                printf("|  X  |", board[i][j]);
+            }
+            else if (board[i][j] == -2)
+            {
+                printf("|  O  |", board[i][j]);
+            }
+        }
+        printf("\n");
+
+        // Spacer 2
+        for (int j=0; j < BOARD_SIZE; j++)
+        {
+            printf("|     |");
+        }
+        printf("\n");
+        
+        // Bottom edge
+        for (int j=0; j < BOARD_SIZE; j++)
+        {
+            printf("=======");
+        }
+        printf("\n");
     }
 }
