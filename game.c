@@ -8,7 +8,7 @@
 
 const char * options[] = {
     "Player vs Player",
-    "Player vs Computer (N/A)",
+    "Player vs Computer",
     "Computer vs Computer",
     "Change Board Size (N/A)",
     "Match History",
@@ -52,9 +52,10 @@ void removeNewline(char*);
 void replayMatch(Result, int);
 void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int);
 void getMatchNumber();
+void computerVsComputer();
 void playerVsComputer();
-void playerMove(int board[BOARD_SIZE][BOARD_SIZE]);
-void computerMove(int board[BOARD_SIZE][BOARD_SIZE]);
+void playerMove(int board[BOARD_SIZE][BOARD_SIZE], bool);
+void computerMove(int board[BOARD_SIZE][BOARD_SIZE], int);
 
 struct stack
 {
@@ -84,10 +85,10 @@ int main(void)
                 break;
             case 2:
                 displayMenuOptions();
-                printf("Selected 2\n");
+                playerVsComputer();
                 break;
             case 3:
-                playerVsComputer();
+                computerVsComputer();
                 break;
             case 4:
                 printf("Selected 4\n");
@@ -160,11 +161,11 @@ int playerVsPlayer()
         storeResults(&moveStack, result, 1);
         startingPlayer++;
         
-        if (result == 2)
+        if (result == 1)
         {
             playerOneScore += 1;
         }
-        else if (result == -2)
+        else if (result == -1)
         {
             playerTwoScore += 1;
         }
@@ -175,15 +176,15 @@ int playerVsPlayer()
         do
         {
             displayBoard(board, playerOneScore, playerTwoScore, 0);
-            if (result == 2)
+            if (result == 1)
             {
                 printf("Player one (X) wins\n");
             }
-            else if (result == -2)
+            else if (result == -1)
             {
                 printf("Player two (O) wins\n");
             }
-            else if (result == -1)
+            else if (result == 0)
             {
                 printf("Game ended in a draw\n");
             }
@@ -229,23 +230,23 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
         {
             // Game ends in a draw
             printf("Game ended in a draw\n");
-            return -1;
+            return 0;
         }
         if (count == 0)
         {
-            if (startingPlayer % 2 == 0)
+            if (startingPlayer % 1 == 0)
             {
                 printf("(X) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
-                currentPlayer = 2;
+                currentPlayer = 1;
             }
             else
             {
                 printf("(O) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
-                currentPlayer = -2;
+                currentPlayer = -1;
             }
             
         }
-        else if(currentPlayer == 2)
+        else if(currentPlayer == 1)
         {
             printf("(X) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
         }
@@ -315,24 +316,24 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
                     {
                         // Clear the redo stack after a new move otherwise problems will occur
                         pop_all(redoStack);
-                        if (currentPlayer == 2)
+                        if (currentPlayer == 1)
                         {
                             push(moveStack, input);
-                            currentPlayer = -2;
+                            currentPlayer = -1;
                         }
-                        else if (currentPlayer == -2)
+                        else if (currentPlayer == -1)
                         {
                             push(moveStack, (-1) * input);
-                            currentPlayer = 2;
+                            currentPlayer = 1;
                         }
                         displayBoard(board, playerOneScore, playerTwoScore, 0);
                         count++;
                         gameOver = checkStatus(board);
-                        if (gameOver == 2)
+                        if (gameOver == 1)
                         {
                             return gameOver;
                         }
-                        else if (gameOver == -2)
+                        else if (gameOver == -1)
                         {
                             return gameOver;
                         }
@@ -414,8 +415,8 @@ int checkStatus(int board[BOARD_SIZE][BOARD_SIZE])
         return status;
     }
     //  0 >> No winner
-    // +2 >> X wins
-    // -2 >> O wins
+    // +1 >> X wins
+    // -1 >> O wins
     return 0;
 }
 
@@ -431,15 +432,15 @@ int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE])
         {
             rowTotal += board[i][j];
         }
-        if (rowTotal == BOARD_SIZE * 2)
+        if (rowTotal == BOARD_SIZE)
         {
             // X wins
-            return 2;
+            return 1;
         }
-        else if (rowTotal == BOARD_SIZE * (-2))
+        else if (rowTotal == BOARD_SIZE * (-1))
         {
             // O wins
-            return -2;
+            return -1;
         }
     }
     // No winner yet
@@ -458,15 +459,15 @@ int checkVertical(int board[BOARD_SIZE][BOARD_SIZE])
         {
             columnTotal += board[j][i];
         }
-        if (columnTotal == BOARD_SIZE * 2)
+        if (columnTotal == BOARD_SIZE)
         {
             // X wins
-            return 2;
+            return 1;
         }
-        else if (columnTotal == BOARD_SIZE * (-2))
+        else if (columnTotal == BOARD_SIZE * (-1))
         {
             // O wins
-            return -2;
+            return -1;
         }
     }
     // No winner yet
@@ -491,15 +492,15 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
         rightDiagonal += board[row][column];       
     }
 
-    if (rightDiagonal == BOARD_SIZE * 2)
+    if (rightDiagonal == BOARD_SIZE)
     {
         // X wins
-        return 2;
+        return 1;
     }
-    else if (rightDiagonal == BOARD_SIZE * (-2))
+    else if (rightDiagonal == BOARD_SIZE * (-1))
     {
         // O wins
-        return -2;
+        return -1;
     }
 
     /*
@@ -516,15 +517,15 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
         leftDiagonal += board[row][column];
     }
 
-    if (leftDiagonal == BOARD_SIZE * 2)
+    if (leftDiagonal == BOARD_SIZE)
     {
         // X wins
-        return 2;
+        return 1;
     }
-    else if (leftDiagonal == BOARD_SIZE * (-2))
+    else if (leftDiagonal == BOARD_SIZE * (-1))
     {
         // O wins
-        return -2;
+        return -1;
     }
 
     // No winner yet
@@ -583,11 +584,11 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int pla
                 }
                 
             }
-            else if (board[i][j] == 2)
+            else if (board[i][j] == 1)
             {
                 printf("|  X  |", board[i][j]);
             }
-            else if (board[i][j] == -2)
+            else if (board[i][j] == -1)
             {
                 printf("|  O  |", board[i][j]);
             }
@@ -762,15 +763,15 @@ void processResults(int *count, Result* results)
 
     for (int i = 0; i < *count; i++)
     {
-        if (results[i].result == 2)
+        if (results[i].result == 1)
         {
             playerOneWins++;
         }
-        else if (results[i].result == -2)
+        else if (results[i].result == -1)
         {
             playerTwoWins++;
         }
-        else if (results[i].result == -1)
+        else if (results[i].result == 0)
         {
             gamesTied++;
         }
@@ -812,15 +813,15 @@ void processResults(int *count, Result* results)
             }
 
             // RESULT
-            if (results[i].result == 2)
+            if (results[i].result == 1)
             {
                 printf("X WINS | ");
             }
-            else if (results[i].result == -2)
+            else if (results[i].result == -1)
             {
                 printf("O WINS | ");
             }
-            else if (results[i].result == -1)
+            else if (results[i].result == 0)
             {
                 printf(" TIED  | ");
             }
@@ -877,11 +878,11 @@ void replayMatch(Result result, int matchNumber)
     {
         if (result.moves[i] < 0)
         {
-            currentPlayer = -2;
+            currentPlayer = -1;
         }
         else
         {
-            currentPlayer = 2;
+            currentPlayer = 1;
         }
         replayMatchDisplay(board, matchNumber);
         Sleep(1500);
@@ -922,11 +923,11 @@ void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int matchNumber)
             {
                 printf("|     |");
             }
-            else if (board[i][j] == 2)
+            else if (board[i][j] == 1)
             {
                 printf("|  X  |", board[i][j]);
             }
-            else if (board[i][j] == -2)
+            else if (board[i][j] == -1)
             {
                 printf("|  O  |", board[i][j]);
             }
@@ -949,25 +950,7 @@ void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int matchNumber)
     }
 }
 
-int* availablePositions(int board[BOARD_SIZE][BOARD_SIZE])
-{
-    int *available = calloc(BOARD_SIZE*BOARD_SIZE, sizeof *available);
-    int i, j, count = 0;
-    for (i=0; i < BOARD_SIZE; i++)
-    {
-        for (j=0; j < BOARD_SIZE; j++)
-        {
-            if (board[i][j] == 0)
-            {
-                available[count] = (i*3) + (j+1);;
-                count++;
-            }
-        }
-    }
-    return available;
-}
-
-void playerVsComputer()
+void computerVsComputer()
 {
     int board[BOARD_SIZE][BOARD_SIZE] = {0};
     bool playerTurn = false;
@@ -977,33 +960,33 @@ void playerVsComputer()
     displayBoard(board, 0, 1, 0);
     while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
     {
+        Sleep(1000);
         count++;
         // Display board
         if (playerTurn)
         {
             printf("Player O Turn\n");
-            playerMove(board);
+            computerMove(board, 1);
         }
         else
         {
             printf("Player X Turn\n");
-            computerMove(board);
+            computerMove(board, -1);
         }
-        Sleep(1000);
+        
         displayBoard(board, 0, 0, 0);
         playerTurn = !playerTurn;
-        
         result = checkStatus(board);
         if (result != 0)
         {
             gameOver = true;
         }
     }
-    if (result == -2)
+    if (result == -1)
     {
         printf("X Wins\n");
     }
-    else if (result == 2)
+    else if (result == 1)
     {
         printf("O Wins\n");
     }
@@ -1013,43 +996,194 @@ void playerVsComputer()
     }
 }
 
-void playerMove(int board[BOARD_SIZE][BOARD_SIZE])
+void playerVsComputer()
 {
-    int *available = availablePositions(board);
+    int board[BOARD_SIZE][BOARD_SIZE] = {0};
+    bool playerTurn = true;
     int count = 0;
-    for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; i++)
+    bool gameOver = false;
+    int result = 0;
+    displayBoard(board, 0, 0, 1);
+    while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
     {
-        if(available[i] == 0)
-        {
-            break;
-        }
         count++;
+        // Display board
+        if (playerTurn)
+        {
+            printf("Player Turn\n");
+            if(count == 1)
+            {
+                playerMove(board, true);
+            }
+            else
+            {
+                playerMove(board, false);
+            }
+        }
+        else
+        {
+            printf("Computer Turn\n");
+            Sleep(1000);
+            computerMove(board, -1);
+        }
+        displayBoard(board, 0, 0, 0);
+        playerTurn = !playerTurn;
+        
+        result = checkStatus(board);
+        if (result != 0)
+        {
+            gameOver = true;
+        }
     }
-    if (count > 0)
+    if (result == -1)
     {
-        srand( time(NULL) );
-        int move = rand() % (count);
-        updateBoard(board, available[move], -2, 0);
+        displayBoard(board, 0, 1, 0);
+        printf("Computer (O) wins!\n");
+    }
+    else if (result == 1)
+    {
+        displayBoard(board, 1, 0, 0);
+        printf("Player One (X) wins!\n");
+    }
+    else
+    {
+        printf("Match Tied\n");
     }
 }
 
-
-void computerMove(int board[BOARD_SIZE][BOARD_SIZE])
+void playerMove(int board[BOARD_SIZE][BOARD_SIZE], bool firstMove)
 {
-    int *available = availablePositions(board);
-    int count = 0;
-    for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; i++)
+    char *end;
+    char buf[100];
+    bool validMove = false;
+    while(!validMove)
     {
-        if(available[i] == 0)
-        {
-            break;
+        do {
+            if (!fgets(buf, sizeof buf, stdin))
+            {
+                break;
+            }
+
+            // Strip the newline character (\n)
+            buf[strlen(buf) - 1] = 0;
+            if (strcmp(buf, "undo") == 0)
+            {
+                // undo
+            }
+            else if (strcmp(buf, "redo") == 0)
+            {
+                // redo
+            }
+            else
+            {
+                int input = strtol(buf, &end, 10);
+                if(input > 0 && input <= (BOARD_SIZE * BOARD_SIZE))
+                {
+                    int valid = updateBoard(board, input, 1, 0);
+                    if(valid == -1)
+                    {
+                        if (firstMove)
+                        {
+                            displayBoard(board, 0, 0, 1);
+                        }
+                        else
+                        {
+                            displayBoard(board, 0, 0, 0);
+                        }
+                        printf("Position %d is already taken\n", input);
+                        break;
+                    }
+                    else
+                    {
+                        validMove = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    if (firstMove)
+                    {
+                        displayBoard(board, 0, 0, 1);
+                    }
+                    else
+                    {
+                        displayBoard(board, 0, 0, 0);
+                    }
+                    printf("Invalid input\n");
+                    break;
+                }
+            }
         }
-        count++;
+        while (end != buf + strlen(buf));
     }
-    if (count > 0)
+}
+
+int minimax(int board[BOARD_SIZE][BOARD_SIZE], int player)
+{
+    // Check the position for the current player on the board
+    int winner = checkStatus(board);
+    if (winner != 0)
     {
-        srand( time(NULL) );
-        int move = rand() % (count);
-        updateBoard(board, available[move], 2, 0);
+        return winner*player;
     }
+
+    int row = -1;
+    // Initialise score with -2 (a losing move is better than no move)
+    int score = -2;
+    int i, j;
+    for (i = 0; i < BOARD_SIZE; i++)
+    {
+        for (j = 0; j < BOARD_SIZE; j++)
+        {
+            if(board[i][j] == 0)
+            {
+                board[i][j] = player;
+                // Check the resulting score of the current move
+                int currentScore = -minimax(board, player*-1);
+                // Select the worst score for the opponent
+                if(currentScore > score)
+                {
+                    score = currentScore;
+                    row = i;
+                }
+                // Reset the current move on the board
+                board[i][j] = 0;
+            }
+        }
+    }
+    if(row != -1)
+    {
+        return score;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+void computerMove(int board[BOARD_SIZE][BOARD_SIZE], int value)
+{
+    int row = -1;
+    int col = -1;
+    int score = -2;
+    int i, j;
+    for (i = 0; i < BOARD_SIZE; i++)
+    {
+        for (j = 0; j < BOARD_SIZE; j++)
+        {
+            if(board[i][j] == 0)
+            {
+                board[i][j] = value;
+                int currentScore = -minimax(board, value * (-1));
+                board[i][j] = 0;
+                if(currentScore > score) {
+                    score = currentScore;
+                    row = i;
+                    col = j;
+                }
+            }
+        }
+    }
+    // Select the position based on the minimax tree result
+    board[row][col] = value;
 }
