@@ -33,7 +33,7 @@ void *pop_all(struct stack*);
 void removeNewline(char*);
 int* availablePositions(int board[BOARD_SIZE][BOARD_SIZE]);
 void playerVsComputer();
-void playerMove(int board[BOARD_SIZE][BOARD_SIZE]);
+void playerMove(int board[BOARD_SIZE][BOARD_SIZE], bool);
 void computerMove(int board[BOARD_SIZE][BOARD_SIZE]);
 
 struct stack
@@ -115,11 +115,11 @@ int* availablePositions(int board[BOARD_SIZE][BOARD_SIZE])
 void playerVsComputer()
 {
     int board[BOARD_SIZE][BOARD_SIZE] = {0};
-    bool playerTurn = false;
+    bool playerTurn = true;
     int count = 0;
     bool gameOver = false;
     int result = 0;
-    displayBoard(board, 0, 1, 0);
+    displayBoard(board, 0, 0, 1);
     while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
     {
         count++;
@@ -127,14 +127,22 @@ void playerVsComputer()
         if (playerTurn)
         {
             printf("Player Turn\n");
-            playerMove(board);
+            if(count == 1)
+            {
+                playerMove(board, true);
+            }
+            else
+            {
+                playerMove(board, false);
+            }
+            
         }
         else
         {
             printf("Computer Turn\n");
+            Sleep(1000);
             computerMove(board);
         }
-        Sleep(1000);
         displayBoard(board, 0, 0, 0);
         playerTurn = !playerTurn;
         
@@ -150,7 +158,7 @@ void playerVsComputer()
     }
     else if (result == 2)
     {
-        printf("Player Wins\n");
+        printf("You Win\n");
     }
     else
     {
@@ -158,26 +166,62 @@ void playerVsComputer()
     }
 }
 
-void playerMove(int board[BOARD_SIZE][BOARD_SIZE])
+void playerMove(int board[BOARD_SIZE][BOARD_SIZE], bool firstMove)
 {
-    int *available = availablePositions(board);
-    int count = 0;
-    for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; i++)
+    char *end;
+    char buf[100];
+    bool validMove = false;
+    while(!validMove)
     {
-        if(available[i] == 0)
-        {
-            break;
-        }
-        count++;
-    }
-    if (count > 0)
-    {
-        srand( time(NULL) );
-        int move = rand() % (count);
-        updateBoard(board, available[move], -2, 0);
-    }
-}
+        do {
+            if (!fgets(buf, sizeof buf, stdin))
+            {
+                break;
+            }
 
+            // Strip the newline character (\n)
+            buf[strlen(buf) - 1] = 0;
+            int input = strtol(buf, &end, 10);
+            if(input > 0 && input <= (BOARD_SIZE * BOARD_SIZE))
+            {
+                int valid = updateBoard(board, input, 2, 0);
+                if(valid == -1)
+                {
+                    if (firstMove)
+                    {
+                        displayBoard(board, 0, 0, 1);
+                    }
+                    else
+                    {
+                        displayBoard(board, 0, 0, 0);
+                    }
+                    printf("Position %d is already taken\n", input);
+                    break;
+                }
+                else
+                {
+                    validMove = true;
+                    break;
+                }
+            }
+            else
+            {
+                if (firstMove)
+                {
+                    displayBoard(board, 0, 0, 1);
+                }
+                else
+                {
+                    displayBoard(board, 0, 0, 0);
+                }
+                printf("Invalid input\n");
+                break;
+            }
+        }
+        while (end != buf + strlen(buf));
+    }
+    
+}
 
 void computerMove(int board[BOARD_SIZE][BOARD_SIZE])
 {
@@ -195,7 +239,7 @@ void computerMove(int board[BOARD_SIZE][BOARD_SIZE])
     {
         srand( time(NULL) );
         int move = rand() % (count);
-        updateBoard(board, available[move], 2, 0);
+        updateBoard(board, available[move], -2, 0);
     }
 }
 

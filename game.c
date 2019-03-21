@@ -90,6 +90,9 @@ int main(void)
                 playerVsComputer();
                 break;
             case 4:
+                printf("Selected 4\n");
+                break;
+            case 5:
                 displayMenuOptions();
                 int count = 0;
                 Result* results = (Result*) malloc(sizeof(Result)  * 100);
@@ -97,7 +100,7 @@ int main(void)
                 processResults(&count, results);
                 free(results); 
                 break;
-            case 5:
+            case 6:
                 displayMenuOptions();
                 getMatchNumber();
                 break;
@@ -886,7 +889,7 @@ void replayMatch(Result result, int matchNumber)
     }
     replayMatchDisplay(board, matchNumber);
     printf("Match Replay Completed.\n");
-    Sleep(3000);
+    Sleep(1500);
     displayMenuOptions();
 }
 
