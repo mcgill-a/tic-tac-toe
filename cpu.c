@@ -33,6 +33,8 @@ void *pop_all(struct stack*);
 void removeNewline(char*);
 int* availablePositions(int board[BOARD_SIZE][BOARD_SIZE]);
 void playerVsComputer();
+void playerMove(int board[BOARD_SIZE][BOARD_SIZE]);
+void computerMove(int board[BOARD_SIZE][BOARD_SIZE]);
 
 struct stack
 {
@@ -113,22 +115,88 @@ int* availablePositions(int board[BOARD_SIZE][BOARD_SIZE])
 void playerVsComputer()
 {
     int board[BOARD_SIZE][BOARD_SIZE] = {0};
-    bool playerTurn = true;
+    bool playerTurn = false;
     int count = 0;
-    while(checkStatus == 0 && count < BOARD_SIZE*BOARD_SIZE)
+    bool gameOver = false;
+    int result = 0;
+    displayBoard(board, 0, 1, 0);
+    while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
     {
+        count++;
         // Display board
         if (playerTurn)
         {
-            // playerMove(board);
+            printf("Player Turn\n");
+            playerMove(board);
         }
         else
         {
-            // computerMove(board)
+            printf("Computer Turn\n");
+            computerMove(board);
         }
+        Sleep(1000);
+        displayBoard(board, 0, 0, 0);
         playerTurn = !playerTurn;
+        
+        result = checkStatus(board);
+        if (result != 0)
+        {
+            gameOver = true;
+        }
     }
-    return 0; // return show
+    if (result == -2)
+    {
+        printf("Computer Wins\n");
+    }
+    else if (result == 2)
+    {
+        printf("Player Wins\n");
+    }
+    else
+    {
+        printf("Match Tied\n");
+    }
+}
+
+void playerMove(int board[BOARD_SIZE][BOARD_SIZE])
+{
+    int *available = availablePositions(board);
+    int count = 0;
+    for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; i++)
+    {
+        if(available[i] == 0)
+        {
+            break;
+        }
+        count++;
+    }
+    if (count > 0)
+    {
+        srand( time(NULL) );
+        int move = rand() % (count);
+        updateBoard(board, available[move], -2, 0);
+    }
+}
+
+
+void computerMove(int board[BOARD_SIZE][BOARD_SIZE])
+{
+    int *available = availablePositions(board);
+    int count = 0;
+    for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; i++)
+    {
+        if(available[i] == 0)
+        {
+            break;
+        }
+        count++;
+    }
+    if (count > 0)
+    {
+        srand( time(NULL) );
+        int move = rand() % (count);
+        updateBoard(board, available[move], 2, 0);
+    }
 }
 
 int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer, struct stack *moveStack, struct stack *redoStack)

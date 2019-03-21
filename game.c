@@ -4,10 +4,12 @@
 #include <time.h>
 #include <string.h>
 #include <windows.h>
+#include <stdbool.h>
 
 const char * options[] = {
     "Player vs Player",
     "Player vs Computer (N/A)",
+    "Computer vs Computer",
     "Change Board Size (N/A)",
     "Match History",
     "Replay Match",
@@ -50,6 +52,9 @@ void removeNewline(char*);
 void replayMatch(Result, int);
 void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int);
 void getMatchNumber();
+void playerVsComputer();
+void playerMove(int board[BOARD_SIZE][BOARD_SIZE]);
+void computerMove(int board[BOARD_SIZE][BOARD_SIZE]);
 
 struct stack
 {
@@ -82,8 +87,7 @@ int main(void)
                 printf("Selected 2\n");
                 break;
             case 3:
-                displayMenuOptions();
-                printf("Selected 3\n");
+                playerVsComputer();
                 break;
             case 4:
                 displayMenuOptions();
@@ -939,5 +943,110 @@ void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int matchNumber)
             printf("=======");
         }
         printf("\n");
+    }
+}
+
+int* availablePositions(int board[BOARD_SIZE][BOARD_SIZE])
+{
+    int *available = calloc(BOARD_SIZE*BOARD_SIZE, sizeof *available);
+    int i, j, count = 0;
+    for (i=0; i < BOARD_SIZE; i++)
+    {
+        for (j=0; j < BOARD_SIZE; j++)
+        {
+            if (board[i][j] == 0)
+            {
+                available[count] = (i*3) + (j+1);;
+                count++;
+            }
+        }
+    }
+    return available;
+}
+
+void playerVsComputer()
+{
+    int board[BOARD_SIZE][BOARD_SIZE] = {0};
+    bool playerTurn = false;
+    int count = 0;
+    bool gameOver = false;
+    int result = 0;
+    displayBoard(board, 0, 1, 0);
+    while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
+    {
+        count++;
+        // Display board
+        if (playerTurn)
+        {
+            printf("Player O Turn\n");
+            playerMove(board);
+        }
+        else
+        {
+            printf("Player X Turn\n");
+            computerMove(board);
+        }
+        Sleep(1000);
+        displayBoard(board, 0, 0, 0);
+        playerTurn = !playerTurn;
+        
+        result = checkStatus(board);
+        if (result != 0)
+        {
+            gameOver = true;
+        }
+    }
+    if (result == -2)
+    {
+        printf("X Wins\n");
+    }
+    else if (result == 2)
+    {
+        printf("O Wins\n");
+    }
+    else
+    {
+        printf("Match Tied\n");
+    }
+}
+
+void playerMove(int board[BOARD_SIZE][BOARD_SIZE])
+{
+    int *available = availablePositions(board);
+    int count = 0;
+    for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; i++)
+    {
+        if(available[i] == 0)
+        {
+            break;
+        }
+        count++;
+    }
+    if (count > 0)
+    {
+        srand( time(NULL) );
+        int move = rand() % (count);
+        updateBoard(board, available[move], -2, 0);
+    }
+}
+
+
+void computerMove(int board[BOARD_SIZE][BOARD_SIZE])
+{
+    int *available = availablePositions(board);
+    int count = 0;
+    for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; i++)
+    {
+        if(available[i] == 0)
+        {
+            break;
+        }
+        count++;
+    }
+    if (count > 0)
+    {
+        srand( time(NULL) );
+        int move = rand() % (count);
+        updateBoard(board, available[move], 2, 0);
     }
 }
