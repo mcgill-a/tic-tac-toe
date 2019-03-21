@@ -6,12 +6,12 @@
 #include <windows.h>
 
 const char * options[] = {
-        "Player vs Player",
-        "Player vs Computer (N/A)",
-        "Change Board Size (N/A)",
-        "Match History",
-        "Replay Match",
-        "Exit",
+    "Player vs Player",
+    "Player vs Computer (N/A)",
+    "Change Board Size (N/A)",
+    "Match History",
+    "Replay Match",
+    "Exit",
 };
 
 #define OPTION_COUNT (sizeof (options) / sizeof (const char *))
@@ -95,8 +95,6 @@ int main(void)
                 break;
             case 5:
                 displayMenuOptions();
-                //printf("Selected 6\n");
-                //printf("Please enter a previous match number\n");
                 getMatchNumber();
                 break;
             case OPTION_COUNT:
@@ -727,8 +725,7 @@ void loadResults(int *count, Result* results)
         }       
         
         char *charMoves = strtok (strdup(array[3]), " ");
-        // [BOARD_SIZE * BOARD_SIZE]
-        int intMoves[1000];
+        int intMoves[BOARD_SIZE * BOARD_SIZE];
         // Split array[3] by " "
         // Convert each value to int
         // Add move to int array

@@ -53,3 +53,4 @@ dkms.conf
 
 # Other
 tic-tac-toe_results.csv
+.vscode/
