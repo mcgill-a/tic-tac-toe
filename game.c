@@ -33,7 +33,7 @@ typedef struct
 void interact();
 void displayMenuOptions();
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int, struct stack*, struct stack*);
+int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int);
 void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int);
 void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int, int);
@@ -54,7 +54,7 @@ void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int);
 void getMatchNumber();
 void computerVsComputer();
 void playerVsComputer();
-void playerMove(int board[BOARD_SIZE][BOARD_SIZE], bool);
+int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int*, int*, struct stack*, struct stack*, int, int);
 void computerMove(int board[BOARD_SIZE][BOARD_SIZE], int);
 
 struct stack
@@ -148,18 +148,14 @@ int playerVsPlayer()
     int playAgain = 0;
     srand( time(NULL) );
     int startingPlayer = rand() % 2;
-    // A stack for storing player moves
-    struct stack moveStack;
-    struct stack redoStack;
-    init_stack(&moveStack);
-    init_stack(&redoStack);
-
+    if (startingPlayer == 0)
+    {
+        startingPlayer = -1;
+    }
     do {
         // Random player starts first game, then alternate
-        result = play(board, playerOneScore, playerTwoScore, startingPlayer, &moveStack, &redoStack);
-        // Write results to file 
-        storeResults(&moveStack, result, 1);
-        startingPlayer++;
+        result = play(board, playerOneScore, playerTwoScore, startingPlayer);
+        startingPlayer *= (-1);
         
         if (result == 1)
         {
@@ -175,7 +171,7 @@ int playerVsPlayer()
         int done = 0;
         do
         {
-            displayBoard(board, playerOneScore, playerTwoScore, 0);
+            displayBoard(board, playerOneScore, playerTwoScore, 1);
             if (result == 1)
             {
                 printf("Player one (X) wins\n");
@@ -198,8 +194,6 @@ int playerVsPlayer()
                     playAgain = 1;
                     // Reset the board
                     resetBoard(board);
-                    fflush(stdin);
-                    CLEARBUF()
                     done = 1;
                     break;
                 case 'N':
@@ -216,146 +210,41 @@ int playerVsPlayer()
     return 0;
 }
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer, struct stack *moveStack, struct stack *redoStack)
+int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer)
 {
-    displayBoard(board, playerOneScore, playerTwoScore, 1);
+    // A stack for storing player moves
+    struct stack moveStack;
+    struct stack redoStack;
+    init_stack(&moveStack);
+    init_stack(&redoStack);
+
+    int currentPlayer = startingPlayer;
+
+    displayBoard(board, playerOneScore, playerTwoScore, 0);
     int gameOver = 0;
     int count = 0;
-    int currentPlayer = 0;
+    int result = 0;
+    int changeStatus = 0;
     
-    while(gameOver == 0)
+    while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
     {
-        // If there are no possible moves left
-        if (count == BOARD_SIZE * BOARD_SIZE)
-        {
-            // Game ends in a draw
-            printf("Game ended in a draw\n");
-            return 0;
-        }
-        if (count == 0)
-        {
-            if (startingPlayer % 1 == 0)
-            {
-                printf("(X) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
-                currentPlayer = 1;
-            }
-            else
-            {
-                printf("(O) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
-                currentPlayer = -1;
-            }
-            
-        }
-        else if(currentPlayer == 1)
-        {
-            printf("(X) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
-        }
-        else
-        {
-            printf("(O) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
-        }
+        count++;
+        changeStatus = playerMove(board, &count, &currentPlayer, &moveStack, &redoStack, playerOneScore, playerTwoScore);
+        displayBoard(board, playerOneScore, playerTwoScore, count);
+
+        // Switch player
+        currentPlayer *= (-1); 
         
-        char *end;
-        char buf[100];
-
-        do {
-            if (!fgets(buf, sizeof buf, stdin))
-            {
-                break;
-            }
-
-            // Strip the newline character (\n)
-            buf[strlen(buf) - 1] = 0;
-            if (strcmp(buf, "undo") == 0)
-            {
-                int *popped = NULL;
-                popped = pop(moveStack);
-                if (popped != NULL)
-                {
-                    push(redoStack, *popped);
-                    count--;
-                    currentPlayer *= -1;
-                    updateBoard(board, *popped, currentPlayer, 1);
-                    displayBoard(board, playerOneScore, playerTwoScore, 0);
-                    break;
-                }
-                else
-                {
-                    displayBoard(board, playerOneScore, playerTwoScore, 0);
-                    printf("Nothing to undo\n");
-                    break;
-                }
-            }
-            else if (strcmp(buf, "redo") == 0)
-            {
-                int *popped = NULL;
-                popped = pop(redoStack);
-                if (popped != NULL)
-                {
-                    push(moveStack, *popped);
-                    count++;
-                    updateBoard(board, *popped, currentPlayer, 0);
-                    displayBoard(board, playerOneScore, playerTwoScore, 0);
-                    currentPlayer *= -1;
-                    break;
-                }
-                else
-                {
-                    displayBoard(board, playerOneScore, playerTwoScore, 0);
-                    printf("Nothing to redo\n");
-                    break;
-                }
-            }
-            else
-            {
-                int input = strtol(buf, &end, 10);
-                if(input > 0 && input <= (BOARD_SIZE * BOARD_SIZE))
-                {
-                    int valid = updateBoard(board, input, currentPlayer, 0);
-                    if(valid != -1)
-                    {
-                        // Clear the redo stack after a new move otherwise problems will occur
-                        pop_all(redoStack);
-                        if (currentPlayer == 1)
-                        {
-                            push(moveStack, input);
-                            currentPlayer = -1;
-                        }
-                        else if (currentPlayer == -1)
-                        {
-                            push(moveStack, (-1) * input);
-                            currentPlayer = 1;
-                        }
-                        displayBoard(board, playerOneScore, playerTwoScore, 0);
-                        count++;
-                        gameOver = checkStatus(board);
-                        if (gameOver == 1)
-                        {
-                            return gameOver;
-                        }
-                        else if (gameOver == -1)
-                        {
-                            return gameOver;
-                        }
-                    }
-                    else
-                    {
-                        displayBoard(board, playerOneScore, playerTwoScore, 0);
-                        printf("Position %d is already taken\n", input);
-                        break;
-                    }
-                }
-                else
-                {
-                    displayBoard(board, playerOneScore, playerTwoScore, 0);
-                    printf("Invalid input\n");
-                    break;
-                }
-            }
+        result = checkStatus(board);
+        if (result != 0)
+        {
+            gameOver = true;
         }
-        while (end != buf + strlen(buf));
     }
-    return -1;
+
+    // Write results to file 
+    storeResults(&moveStack, result, 1);
+    return result;
 }
 
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int position, int value, int override)
@@ -544,12 +433,11 @@ void resetBoard(int board[BOARD_SIZE][BOARD_SIZE])
     }
 }
 
-void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int showPositions)
+void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int moveNumber)
 {
     system("cls");
     printf("Tic Tac Toe (%dx%d)\n", BOARD_SIZE, BOARD_SIZE);
     printf("SCORE: (X) %d - %d (O)\n", playerOneScore, playerTwoScore);
-    
     // Top edge
     for (int i=0; i < BOARD_SIZE; i++)
     {
@@ -571,26 +459,25 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int pla
         for (int j=0; j < BOARD_SIZE; j++)
         {
             counter++;
-            if (board[i][j] == 0)
-            {
-                // Switch between showing number positons on the board
-                if (showPositions == 0)
-                {
-                    printf("|     |");
-                }
-                else 
-                {
-                    printf("|  %d  |", counter);
-                }
-                
-            }
-            else if (board[i][j] == 1)
+            if (board[i][j] == 1)
             {
                 printf("|  X  |", board[i][j]);
             }
             else if (board[i][j] == -1)
             {
                 printf("|  O  |", board[i][j]);
+            }
+            else
+            {
+                // Switch between showing number positons on the board
+                if (moveNumber == 0)
+                {
+                    printf("|  %d  |", counter);
+                }
+                else 
+                {
+                    printf("|     |");
+                }
             }
         }
         printf("\n");
@@ -999,26 +886,25 @@ void computerVsComputer()
 void playerVsComputer()
 {
     int board[BOARD_SIZE][BOARD_SIZE] = {0};
-    bool playerTurn = true;
+    int currentPlayer = 1;
     int count = 0;
     bool gameOver = false;
     int result = 0;
+
+    // A stack for storing player moves
+    struct stack moveStack;
+    struct stack redoStack;
+    init_stack(&moveStack);
+    init_stack(&redoStack);
+
     displayBoard(board, 0, 0, 1);
     while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
     {
         count++;
-        // Display board
-        if (playerTurn)
+        if (currentPlayer == 1)
         {
             printf("Player Turn\n");
-            if(count == 1)
-            {
-                playerMove(board, true);
-            }
-            else
-            {
-                playerMove(board, false);
-            }
+            playerMove(board, &count, &currentPlayer, &moveStack, &redoStack, 0, 0);
         }
         else
         {
@@ -1027,7 +913,7 @@ void playerVsComputer()
             computerMove(board, -1);
         }
         displayBoard(board, 0, 0, 0);
-        playerTurn = !playerTurn;
+        currentPlayer *= (-1);
         
         result = checkStatus(board);
         if (result != 0)
@@ -1037,12 +923,12 @@ void playerVsComputer()
     }
     if (result == -1)
     {
-        displayBoard(board, 0, 1, 0);
+        displayBoard(board, 0, 1, 1);
         printf("Computer (O) wins!\n");
     }
     else if (result == 1)
     {
-        displayBoard(board, 1, 0, 0);
+        displayBoard(board, 1, 0, 1);
         printf("Player One (X) wins!\n");
     }
     else
@@ -1051,13 +937,21 @@ void playerVsComputer()
     }
 }
 
-void playerMove(int board[BOARD_SIZE][BOARD_SIZE], bool firstMove)
+int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer, struct stack *moveStack, struct stack *redoStack, int playerOneScore, int playerTwoScore)
 {
     char *end;
     char buf[100];
     bool validMove = false;
     while(!validMove)
     {
+        if (*currentPlayer == 1)
+        {
+            printf("(X) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
+        }
+        else if (*currentPlayer == -1)
+        {
+            printf("(O) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
+        }
         do {
             if (!fgets(buf, sizeof buf, stdin))
             {
@@ -1068,47 +962,68 @@ void playerMove(int board[BOARD_SIZE][BOARD_SIZE], bool firstMove)
             buf[strlen(buf) - 1] = 0;
             if (strcmp(buf, "undo") == 0)
             {
-                // undo
+                int *popped = NULL;
+                popped = pop(moveStack);
+                if (popped != NULL)
+                {
+                    push(redoStack, *popped);
+                    *count -= 1;
+                    *currentPlayer *= -1;
+                    updateBoard(board, *popped, *currentPlayer, 1);
+                    displayBoard(board, playerOneScore, playerTwoScore, *count);
+                    break;
+                }
+                else
+                {
+                    displayBoard(board, playerOneScore, playerTwoScore, *count);
+                    printf("Nothing to undo\n");
+                    break;
+                }
             }
             else if (strcmp(buf, "redo") == 0)
             {
-                // redo
+                int *popped = NULL;
+                popped = pop(redoStack);
+                if (popped != NULL)
+                {
+                    push(moveStack, *popped);
+                    *count += 1;
+                    updateBoard(board, *popped, *currentPlayer, 0);
+                    displayBoard(board, playerOneScore, playerTwoScore, *count);
+                    *currentPlayer *= -1;
+                    break;
+                }
+                else
+                {
+                    displayBoard(board, playerOneScore, playerTwoScore, *count);
+                    printf("Nothing to redo\n");
+                    break;
+                }
             }
             else
             {
                 int input = strtol(buf, &end, 10);
                 if(input > 0 && input <= (BOARD_SIZE * BOARD_SIZE))
                 {
-                    int valid = updateBoard(board, input, 1, 0);
+                    int valid = updateBoard(board, input, *currentPlayer, 0);
                     if(valid == -1)
                     {
-                        if (firstMove)
-                        {
-                            displayBoard(board, 0, 0, 1);
-                        }
-                        else
-                        {
-                            displayBoard(board, 0, 0, 0);
-                        }
+                        displayBoard(board, playerOneScore, playerTwoScore, *count);
                         printf("Position %d is already taken\n", input);
                         break;
                     }
                     else
                     {
                         validMove = true;
+                        pop_all(redoStack);
+                        input *= *currentPlayer;
+                        push(moveStack, input);
                         break;
                     }
                 }
                 else
                 {
-                    if (firstMove)
-                    {
-                        displayBoard(board, 0, 0, 1);
-                    }
-                    else
-                    {
-                        displayBoard(board, 0, 0, 0);
-                    }
+                    displayBoard(board, playerOneScore, playerTwoScore, *count);
                     printf("Invalid input\n");
                     break;
                 }
@@ -1116,6 +1031,7 @@ void playerMove(int board[BOARD_SIZE][BOARD_SIZE], bool firstMove)
         }
         while (end != buf + strlen(buf));
     }
+    return 0;
 }
 
 int minimax(int board[BOARD_SIZE][BOARD_SIZE], int player)
