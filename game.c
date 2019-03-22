@@ -33,7 +33,7 @@ typedef struct
 void interact();
 void displayMenuOptions();
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int);
+int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int, int);
 void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int);
 void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
 int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int, int);
@@ -54,8 +54,8 @@ void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int);
 void getMatchNumber();
 void computerVsComputer();
 void playerVsComputer();
-int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int*, int*, struct stack*, struct stack*, int, int);
-void computerMove(int board[BOARD_SIZE][BOARD_SIZE], int);
+int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int*, int*, struct stack*, struct stack*, int, int, int);
+void computerMove(int board[BOARD_SIZE][BOARD_SIZE], struct stack*, int);
 
 struct stack
 {
@@ -81,11 +81,11 @@ int main(void)
         switch (option)
         {
             case 1:
-                playerVsPlayer();
+                match(1);
                 break;
             case 2:
                 displayMenuOptions();
-                playerVsComputer();
+                match(2);
                 break;
             case 3:
                 computerVsComputer();
@@ -139,7 +139,7 @@ void displayMenuOptions()
     printf("\n");
 }
 
-int playerVsPlayer()
+int match(int mode)
 {
     int board[BOARD_SIZE][BOARD_SIZE] = {0}; 
     int playerOneScore = 0;
@@ -154,7 +154,7 @@ int playerVsPlayer()
     }
     do {
         // Random player starts first game, then alternate
-        result = play(board, playerOneScore, playerTwoScore, startingPlayer);
+        result = play(board, playerOneScore, playerTwoScore, startingPlayer, mode);
         startingPlayer *= (-1);
         
         if (result == 1)
@@ -210,7 +210,7 @@ int playerVsPlayer()
     return 0;
 }
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer)
+int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer, int mode)
 {
     // A stack for storing player moves
     struct stack moveStack;
@@ -224,12 +224,20 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
     int gameOver = 0;
     int count = 0;
     int result = 0;
-    int changeStatus = 0;
     
     while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
     {
         count++;
-        changeStatus = playerMove(board, &count, &currentPlayer, &moveStack, &redoStack, playerOneScore, playerTwoScore);
+        if (mode == 2 && currentPlayer == -1)
+        {
+            computerMove(board, &moveStack, -1);
+            Sleep(2000);
+        }
+        else
+        {
+            playerMove(board, &count, &currentPlayer, &moveStack, &redoStack, playerOneScore, playerTwoScore, mode);
+        }
+        
         displayBoard(board, playerOneScore, playerTwoScore, count);
 
         // Switch player
@@ -243,7 +251,7 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
     }
 
     // Write results to file 
-    storeResults(&moveStack, result, 1);
+    storeResults(&moveStack, result, mode);
     return result;
 }
 
@@ -840,29 +848,34 @@ void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int matchNumber)
 void computerVsComputer()
 {
     int board[BOARD_SIZE][BOARD_SIZE] = {0};
-    bool playerTurn = false;
+    
+    struct stack moveStack;
+    init_stack(&moveStack);
+
+    bool currentComputer = false;
     int count = 0;
     bool gameOver = false;
     int result = 0;
-    displayBoard(board, 0, 1, 0);
+
+
+    displayBoard(board, 0, 0, 0);
     while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
     {
-        Sleep(1000);
         count++;
         // Display board
-        if (playerTurn)
+        if (currentComputer)
         {
-            printf("Player O Turn\n");
-            computerMove(board, 1);
+            computerMove(board, &moveStack, 1);
+            //printf("Player O Turn\n");
         }
         else
         {
-            printf("Player X Turn\n");
-            computerMove(board, -1);
+            computerMove(board, &moveStack, -1);
+            //printf("Player X Turn\n");
         }
-        
-        displayBoard(board, 0, 0, 0);
-        playerTurn = !playerTurn;
+        Sleep(2000);
+        displayBoard(board, 0, 0, 1);
+        currentComputer = !currentComputer;
         result = checkStatus(board);
         if (result != 0)
         {
@@ -883,61 +896,7 @@ void computerVsComputer()
     }
 }
 
-void playerVsComputer()
-{
-    int board[BOARD_SIZE][BOARD_SIZE] = {0};
-    int currentPlayer = 1;
-    int count = 0;
-    bool gameOver = false;
-    int result = 0;
-
-    // A stack for storing player moves
-    struct stack moveStack;
-    struct stack redoStack;
-    init_stack(&moveStack);
-    init_stack(&redoStack);
-
-    displayBoard(board, 0, 0, 1);
-    while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
-    {
-        count++;
-        if (currentPlayer == 1)
-        {
-            printf("Player Turn\n");
-            playerMove(board, &count, &currentPlayer, &moveStack, &redoStack, 0, 0);
-        }
-        else
-        {
-            printf("Computer Turn\n");
-            Sleep(1000);
-            computerMove(board, -1);
-        }
-        displayBoard(board, 0, 0, 0);
-        currentPlayer *= (-1);
-        
-        result = checkStatus(board);
-        if (result != 0)
-        {
-            gameOver = true;
-        }
-    }
-    if (result == -1)
-    {
-        displayBoard(board, 0, 1, 1);
-        printf("Computer (O) wins!\n");
-    }
-    else if (result == 1)
-    {
-        displayBoard(board, 1, 0, 1);
-        printf("Player One (X) wins!\n");
-    }
-    else
-    {
-        printf("Match Tied\n");
-    }
-}
-
-int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer, struct stack *moveStack, struct stack *redoStack, int playerOneScore, int playerTwoScore)
+int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer, struct stack *moveStack, struct stack *redoStack, int playerOneScore, int playerTwoScore, int mode)
 {
     char *end;
     char buf[100];
@@ -962,26 +921,65 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
             buf[strlen(buf) - 1] = 0;
             if (strcmp(buf, "undo") == 0)
             {
-                int *popped = NULL;
-                popped = pop(moveStack);
-                if (popped != NULL)
+                // Dont let the player undo the first computer move
+                if (mode == 2 && (*count != 2 && *currentPlayer == 1))
                 {
-                    push(redoStack, *popped);
-                    *count -= 1;
-                    *currentPlayer *= -1;
-                    updateBoard(board, *popped, *currentPlayer, 1);
+                    // When playing against the computer, undo 2 moves at once
+                    // So the player cannot change their opponents move
+                    int *popped = NULL;
+                    popped = pop(moveStack);
+                    if (popped != NULL)
+                    {
+                        push(redoStack, *popped);
+                        *count -= 1;
+                        *currentPlayer *= -1;
+                        updateBoard(board, *popped, *currentPlayer, 1);
+                    }
+                }
+                if (mode == 2 && (*count == 2 && *currentPlayer == 1))
+                {
                     displayBoard(board, playerOneScore, playerTwoScore, *count);
-                    break;
+                    printf("Cannot undo your opponents first move\n");
                 }
                 else
                 {
-                    displayBoard(board, playerOneScore, playerTwoScore, *count);
-                    printf("Nothing to undo\n");
-                    break;
+                    int *popped = NULL;
+                    popped = pop(moveStack);
+                    if (popped != NULL)
+                    {
+                        push(redoStack, *popped);
+                        *count -= 1;
+                        *currentPlayer *= -1;
+                        updateBoard(board, *popped, *currentPlayer, 1);
+                        displayBoard(board, playerOneScore, playerTwoScore, *count);
+                        break;
+                    }
+                    else
+                    {
+                        displayBoard(board, playerOneScore, playerTwoScore, *count);
+                        printf("Nothing to undo\n");
+                        break;
+                    }
                 }
+                
+                           
             }
             else if (strcmp(buf, "redo") == 0)
             {
+                if (mode == 2)
+                {
+                    // When playing against the computer, redo 2 moves at once
+                    // So the player cannot change their opponents move
+                    int *popped = NULL;
+                    popped = pop(redoStack);
+                    if (popped != NULL)
+                    {
+                        push(moveStack, *popped);
+                        *count += 1;
+                        updateBoard(board, *popped, *currentPlayer, 0);
+                        *currentPlayer *= -1;
+                    }
+                }
                 int *popped = NULL;
                 popped = pop(redoStack);
                 if (popped != NULL)
@@ -1077,8 +1075,16 @@ int minimax(int board[BOARD_SIZE][BOARD_SIZE], int player)
     }
 }
 
-void computerMove(int board[BOARD_SIZE][BOARD_SIZE], int value)
+void computerMove(int board[BOARD_SIZE][BOARD_SIZE], struct stack *moveStack, int value)
 {
+    if (value == 1)
+    {
+        printf("Computer (X) is thinking..\n");
+    }
+    else if (value == -1)
+    {
+        printf("Computer (0) is thinking..\n");
+    }
     int row = -1;
     int col = -1;
     int score = -2;
@@ -1102,4 +1108,7 @@ void computerMove(int board[BOARD_SIZE][BOARD_SIZE], int value)
     }
     // Select the position based on the minimax tree result
     board[row][col] = value;
+    // Value will be 1 or -1. Multiply the cell by the value to specify X or O
+    int number = value * ((row * 3) + (col + 1));
+    push(moveStack, number);
 }
