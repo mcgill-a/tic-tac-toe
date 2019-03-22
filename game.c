@@ -691,20 +691,28 @@ void processResults(int *count, Result* results)
         printf("X Wins: %d (%.0f%%) | O Wins: %d (%.0f%%)\n\n", playerOneWins, playerOneWinPercentage, playerTwoWins, playerTwoWinpercentage);
         
         // Print previous matches
-        printf("# |         DATE        | MODE | RESULT | MOVES\n");
+        printf(" # |       DATE       | MODE | RESULT | MOVES\n");
         for (int i = 0; i < *count; i++)
         {
             // NUMBER AND DATE
-            printf("%d | %s | ", i+1, results[i].date);
+            if (i+1 < 10)
+            {
+                printf(" %d | %s | ", i+1, results[i].date);
+            }
+            else
+            {
+                printf("%d | %s | ", i+1, results[i].date);
+            }
+            
             
             // MODE
             if (results[i].mode == 1)
             {
-                printf("PVP  | ");
+                printf("PvP  | ");
             }
             else if (results[i].mode == 2)
             {
-                printf("PVE  | ");
+                printf("PvE  | ");
             }
 
             // RESULT
@@ -857,7 +865,6 @@ void computerVsComputer()
     bool gameOver = false;
     int result = 0;
 
-
     displayBoard(board, 0, 0, 0);
     while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
     {
@@ -866,12 +873,10 @@ void computerVsComputer()
         if (currentComputer)
         {
             computerMove(board, &moveStack, 1);
-            //printf("Player O Turn\n");
         }
         else
         {
             computerMove(board, &moveStack, -1);
-            //printf("Player X Turn\n");
         }
         Sleep(2000);
         displayBoard(board, 0, 0, 1);
@@ -960,9 +965,7 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
                         printf("Nothing to undo\n");
                         break;
                     }
-                }
-                
-                           
+                }     
             }
             else if (strcmp(buf, "redo") == 0)
             {
