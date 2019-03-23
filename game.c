@@ -10,14 +10,13 @@ const char * options[] = {
     "Player vs Player",
     "Player vs Computer",
     "Computer vs Computer",
-    "Change Board Size (N/A)",
+    "Change Board Size",
     "Match History",
     "Replay Match",
     "Exit",
 };
 
 #define OPTION_COUNT (sizeof (options) / sizeof (const char *))
-#define BOARD_SIZE 3
 // Clear the buffer to avoid problems with input when game is reset
 #define CLEARBUF() char ch; while ((ch = getchar()) != '\n' && ch != EOF);
 
@@ -25,41 +24,44 @@ typedef struct
 {
     char date[50];
     int mode;
+    int boardSize;
     int result;
-    int moves[1000];
+    int moves[81];
     int moveCount;
 } Result;
 
 void interact();
-void displayMenuOptions();
-
-int play(int board[BOARD_SIZE][BOARD_SIZE], int, int, int, int);
-void displayBoard(int[BOARD_SIZE][BOARD_SIZE], int, int, int);
-void resetBoard(int board[BOARD_SIZE][BOARD_SIZE]);
-int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int, int, int);
-int checkStatus(int board[BOARD_SIZE][BOARD_SIZE]);
-int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE]);
-int checkVertical(int board[BOARD_SIZE][BOARD_SIZE]);
-int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE]);
-void push(struct stack*, int);
+void displayMenuOptions(char[50]);
+void changeBoardSize(int*);
+void initialiseBoard(int**, int);
+void unallocateBoard(int**, int);
+int match(int, int);
+int play(int** board, int, int, int, int, int);
+void displayBoard(int**, int, int, int, int);
+void resetBoard(int** board, int);
+int updateBoard(int** board, int, int, int, int);
+int checkStatus(int** board, int);
+int checkHorizontal(int** board, int);
+int checkVertical(int** board, int);
+int checkDiagonal(int** board, int);
+void push(struct stack*, int, int);
 void *pop(struct stack*);
 void *pop_all(struct stack*);
-void storeResults(struct stack*, int, int);
+void storeResults(struct stack*, int, int, int);
 int fileExists(const char*);
 void loadResults(int*, Result*);
 void processResults(int*, Result*);
 void removeNewline(char*);
 void replayMatch(Result, int);
-void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int);
+void replayMatchDisplay(int** board, int, int);
 void getMatchNumber();
-void computerVsComputer();
-void playerVsComputer();
-int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int*, int*, struct stack*, struct stack*, int, int, int);
-void computerMove(int board[BOARD_SIZE][BOARD_SIZE], struct stack*, int);
+void computerVsComputer(int);
+int playerMove(int** board, int, int*, int*, struct stack*, struct stack*, int, int, int);
+void computerMove(int** board, int, struct stack*, int);
 
 struct stack
 {
-    int moves[BOARD_SIZE*BOARD_SIZE];
+    int moves[81];
     int top;
 };
 
@@ -72,8 +74,9 @@ int main(void)
 {
     char userInput[5];
     int option = -1;
-    
-    displayMenuOptions();
+    // Default board size == 3
+    int boardSize = 3;
+    displayMenuOptions("");
     do
     {
         fgets(userInput, 100, stdin);
@@ -81,20 +84,27 @@ int main(void)
         switch (option)
         {
             case 1:
-                match(1);
+                match(1, boardSize);
                 break;
             case 2:
-                displayMenuOptions();
-                match(2);
+                displayMenuOptions("");
+                match(2, boardSize);
                 break;
             case 3:
-                computerVsComputer();
+                computerVsComputer(boardSize);
                 break;
             case 4:
-                printf("Selected 4\n");
+                printf("\nCurrent board size: %d\n", boardSize);
+                changeBoardSize(&boardSize);
+                
+                char info[50] = "New board size: ";
+                char boardSizeStr[5];
+                strcat(info, itoa(boardSize, boardSizeStr, 10));
+                
+                displayMenuOptions(info);
                 break;
             case 5:
-                displayMenuOptions();
+                displayMenuOptions("");
                 int count = 0;
                 Result* results = (Result*) malloc(sizeof(Result)  * 100);
                 loadResults(&count, results);
@@ -102,16 +112,16 @@ int main(void)
                 free(results); 
                 break;
             case 6:
-                displayMenuOptions();
+                displayMenuOptions("");
                 getMatchNumber();
                 break;
             case OPTION_COUNT:
-                displayMenuOptions();
+                displayMenuOptions("");
                 printf("Selected Exit\n");
                 exit(0);
                 break;
             default:
-                displayMenuOptions();
+                displayMenuOptions("");
                 printf("Please enter a value between 1-%d:\n", OPTION_COUNT);
                 break;
         }
@@ -125,7 +135,7 @@ void removeNewline(char *s) {
     *s = 0;
 }
 
-void displayMenuOptions()
+void displayMenuOptions(char info[50])
 {
     system("cls");
     printf("Tic Tac Toe by Alex McGill\n\n");
@@ -137,11 +147,60 @@ void displayMenuOptions()
         printf("[%d] %s\n", i+1, options[i]);
     }
     printf("\n");
+    // If there was information provided to the method, display it
+    if (strcmp(info, "") != 0)
+    {
+        printf("[INFO] %s\n\n", info);
+    }
+    printf("Select an option (1-%d): ", OPTION_COUNT);
 }
 
-int match(int mode)
+void changeBoardSize(int *boardSize)
 {
-    int board[BOARD_SIZE][BOARD_SIZE] = {0}; 
+    printf("Please enter a new board size (3-9): ");
+    char userInput[5];
+    int option = -1;
+    fgets(userInput, 100, stdin);
+    option = atoi(userInput);
+    while (option < 3 || option > 9)
+    {
+        printf("Invalid input. Please enter a new board size (3-9): ");
+        fgets(userInput, 100, stdin);
+        option = atoi(userInput);
+    }
+    *boardSize = option;
+}
+
+void initialiseBoard(int** board, int boardSize)
+{
+    for(int i = 0; i < boardSize; i++)
+    {
+        // Allocate memory for each row
+        board[i] = (int *) malloc(boardSize * sizeof(int));
+        // Loop through each column in the row
+        for (int j = 0; j < boardSize; j++)
+        {
+            board[i][j] = 0;
+        }
+    }
+}
+
+void unallocateBoard(int **board, int boardSize)
+{
+    for(int i = 0; i < boardSize; i++)
+    {
+        // Allocate memory for each row
+        free(board[i]);
+    }
+    free(board);
+
+}
+
+int match(int mode, int boardSize)
+{
+    // Allocate memory for the board 2D array
+    int **board = (int **) malloc(boardSize * sizeof(int *));
+    initialiseBoard(board, boardSize);
     int playerOneScore = 0;
     int playerTwoScore = 0;
     int result = 0;
@@ -154,7 +213,7 @@ int match(int mode)
     }
     do {
         // Random player starts first game, then alternate
-        result = play(board, playerOneScore, playerTwoScore, startingPlayer, mode);
+        result = play(board, boardSize, playerOneScore, playerTwoScore, startingPlayer, mode);
         startingPlayer *= (-1);
         
         if (result == 1)
@@ -171,7 +230,7 @@ int match(int mode)
         int done = 0;
         do
         {
-            displayBoard(board, playerOneScore, playerTwoScore, 1);
+            displayBoard(board, boardSize, playerOneScore, playerTwoScore, 1);
             if (result == 1)
             {
                 printf("Player one (X) wins\n");
@@ -193,24 +252,24 @@ int match(int mode)
                 case 'Y':
                     playAgain = 1;
                     // Reset the board
-                    resetBoard(board);
+                    resetBoard(board, boardSize);
                     done = 1;
                     break;
                 case 'N':
                     playAgain = 0;
                     done = 1;
-                    displayMenuOptions();
+                    displayMenuOptions("");
                     break;
                 default:
                     continue;
             }
         } while (done == 0);
     } while(playAgain == 1);
-    
+    unallocateBoard(board, boardSize);
     return 0;
 }
 
-int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int startingPlayer, int mode)
+int play(int** board, int boardSize, int playerOneScore, int playerTwoScore, int startingPlayer, int mode)
 {
     // A stack for storing player moves
     struct stack moveStack;
@@ -220,30 +279,29 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
 
     int currentPlayer = startingPlayer;
 
-    displayBoard(board, playerOneScore, playerTwoScore, 0);
+    displayBoard(board, boardSize, playerOneScore, playerTwoScore, 0);
     int gameOver = 0;
     int count = 0;
     int result = 0;
     
-    while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
+    while(!gameOver && count < boardSize*boardSize)
     {
         count++;
         if (mode == 2 && currentPlayer == -1)
         {
-            computerMove(board, &moveStack, -1);
+            computerMove(board, boardSize, &moveStack, -1);
             Sleep(2000);
         }
         else
         {
-            playerMove(board, &count, &currentPlayer, &moveStack, &redoStack, playerOneScore, playerTwoScore, mode);
+            playerMove(board, boardSize, &count, &currentPlayer, &moveStack, &redoStack, playerOneScore, playerTwoScore, mode);
         }
         
-        displayBoard(board, playerOneScore, playerTwoScore, count);
-
+        displayBoard(board, boardSize, playerOneScore, playerTwoScore, count);
         // Switch player
         currentPlayer *= (-1); 
         
-        result = checkStatus(board);
+        result = checkStatus(board, boardSize);
         if (result != 0)
         {
             gameOver = true;
@@ -251,11 +309,11 @@ int play(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoSco
     }
 
     // Write results to file 
-    storeResults(&moveStack, result, mode);
+    storeResults(&moveStack, result, mode, boardSize);
     return result;
 }
 
-int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int position, int value, int override)
+int updateBoard(int** board, int boardSize, int position, int value, int override)
 {
     // Make positon positive if it is negative
     if (position < 0)
@@ -265,9 +323,9 @@ int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int position, int value, int 
 
     // position / BOARD_SIZE (rounded to nearest whole number)
     // Subtract 1 because arrays start at 0
-    int row = ((position -1) / BOARD_SIZE + 1) - 1;
+    int row = ((position -1) / boardSize + 1) - 1;
     // Use the row and board size to work out which column the position is in
-    int column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - position);
+    int column = (boardSize -1) - (((row+1) * boardSize) - position);
     
     // If undo (override) is selected:
     if (override == 1)
@@ -290,23 +348,23 @@ int updateBoard(int board[BOARD_SIZE][BOARD_SIZE], int position, int value, int 
     }    
 }
 
-int checkStatus(int board[BOARD_SIZE][BOARD_SIZE])
+int checkStatus(int** board, int boardSize)
 {
     int status = 0;
     // Check for a horizontal win
-    status = checkHorizontal(board);
+    status = checkHorizontal(board, boardSize);
     if(status != 0)
     {
         return status;
     }
     // Check for a vertical win
-    status = checkVertical(board);
+    status = checkVertical(board, boardSize);
     if(status != 0)
     {
         return status;
     }
     // Check for a diagonal win
-    status = checkDiagonal(board);
+    status = checkDiagonal(board, boardSize);
     if(status != 0)
     {
         return status;
@@ -317,24 +375,24 @@ int checkStatus(int board[BOARD_SIZE][BOARD_SIZE])
     return 0;
 }
 
-int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE])
+int checkHorizontal(int** board, int boardSize)
 {
     int rowTotal;
     // Loop through each row
-    for(int i = 0; i < BOARD_SIZE; i++)
+    for(int i = 0; i < boardSize; i++)
     {
         rowTotal = 0;
         // Loop through each column in the row
-        for (int j = 0; j < BOARD_SIZE; j++)
+        for (int j = 0; j < boardSize; j++)
         {
             rowTotal += board[i][j];
         }
-        if (rowTotal == BOARD_SIZE)
+        if (rowTotal == boardSize)
         {
             // X wins
             return 1;
         }
-        else if (rowTotal == BOARD_SIZE * (-1))
+        else if (rowTotal == boardSize * (-1))
         {
             // O wins
             return -1;
@@ -344,24 +402,24 @@ int checkHorizontal(int board[BOARD_SIZE][BOARD_SIZE])
     return 0;
 }
 
-int checkVertical(int board[BOARD_SIZE][BOARD_SIZE])
+int checkVertical(int** board, int boardSize)
 {
     int columnTotal;
     // Loop through each column
-    for(int i = 0; i < BOARD_SIZE; i++)
+    for(int i = 0; i < boardSize; i++)
     {
         columnTotal = 0;
         // Loop through each row in the column
-        for (int j = 0; j < BOARD_SIZE; j++)
+        for (int j = 0; j < boardSize; j++)
         {
             columnTotal += board[j][i];
         }
-        if (columnTotal == BOARD_SIZE)
+        if (columnTotal == boardSize)
         {
             // X wins
             return 1;
         }
-        else if (columnTotal == BOARD_SIZE * (-1))
+        else if (columnTotal == boardSize * (-1))
         {
             // O wins
             return -1;
@@ -371,7 +429,7 @@ int checkVertical(int board[BOARD_SIZE][BOARD_SIZE])
     return 0;
 }
 
-int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
+int checkDiagonal(int** board, int boardSize)
 {
     int rightDiagonal = 0, leftDiagonal = 0, row = 0, column = 0;
 
@@ -382,19 +440,19 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
     */
 
     // Loop through the right diagonal values
-    for(int i = 0; i < BOARD_SIZE * BOARD_SIZE; i += (BOARD_SIZE + 1))
+    for(int i = 0; i < boardSize * boardSize; i += (boardSize + 1))
     {
-        row = ((i - 1) / BOARD_SIZE + 1) - 1;
-        column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - (i+1));
+        row = ((i - 1) / boardSize + 1) - 1;
+        column = (boardSize -1) - (((row+1) * boardSize) - (i+1));
         rightDiagonal += board[row][column];       
     }
 
-    if (rightDiagonal == BOARD_SIZE)
+    if (rightDiagonal == boardSize)
     {
         // X wins
         return 1;
     }
-    else if (rightDiagonal == BOARD_SIZE * (-1))
+    else if (rightDiagonal == boardSize * (-1))
     {
         // O wins
         return -1;
@@ -407,19 +465,19 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
     */
 
    // Loop through the right diagonal values
-    for(int i = BOARD_SIZE-1; i < BOARD_SIZE * BOARD_SIZE - (BOARD_SIZE-1); i += (BOARD_SIZE - 1))
+    for(int i = boardSize-1; i < boardSize * boardSize - (boardSize-1); i += (boardSize - 1))
     {
-        row = ((i - 1) / BOARD_SIZE + 1) - 1;
-        column = (BOARD_SIZE -1) - (((row+1) * BOARD_SIZE) - (i+1));
+        row = ((i - 1) / boardSize + 1) - 1;
+        column = (boardSize -1) - (((row+1) * boardSize) - (i+1));
         leftDiagonal += board[row][column];
     }
 
-    if (leftDiagonal == BOARD_SIZE)
+    if (leftDiagonal == boardSize)
     {
         // X wins
         return 1;
     }
-    else if (leftDiagonal == BOARD_SIZE * (-1))
+    else if (leftDiagonal == boardSize * (-1))
     {
         // O wins
         return -1;
@@ -429,42 +487,42 @@ int checkDiagonal(int board[BOARD_SIZE][BOARD_SIZE])
     return 0;
 }
 
-void resetBoard(int board[BOARD_SIZE][BOARD_SIZE])
+void resetBoard(int** board, int boardSize)
 {
-    for(int i = 0; i < BOARD_SIZE; i++)
+    for(int i = 0; i < boardSize; i++)
     {
         // Loop through each column in the row
-        for (int j = 0; j < BOARD_SIZE; j++)
+        for (int j = 0; j < boardSize; j++)
         {
             board[i][j] = 0;
         }
     }
 }
 
-void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int playerTwoScore, int moveNumber)
+void displayBoard(int** board, int boardSize, int playerOneScore, int playerTwoScore, int moveNumber)
 {
-    system("cls");
-    printf("Tic Tac Toe (%dx%d)\n", BOARD_SIZE, BOARD_SIZE);
+    //system("cls");
+    printf("Tic Tac Toe (%dx%d)\n", boardSize, boardSize);
     printf("SCORE: (X) %d - %d (O)\n", playerOneScore, playerTwoScore);
     // Top edge
-    for (int i=0; i < BOARD_SIZE; i++)
+    for (int i=0; i < boardSize; i++)
     {
         printf("=======");
     }
     printf("\n");
 
     int counter = 0;
-    for (int i=0; i < BOARD_SIZE; i++)
+    for (int i=0; i < boardSize; i++)
     {
         // Spacer 1
-        for (int j=0; j < BOARD_SIZE; j++)
+        for (int j=0; j < boardSize; j++)
         {
             printf("|     |");
         }
         printf("\n");
 
         // Block value
-        for (int j=0; j < BOARD_SIZE; j++)
+        for (int j=0; j < boardSize; j++)
         {
             counter++;
             if (board[i][j] == 1)
@@ -491,14 +549,14 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int pla
         printf("\n");
 
         // Spacer 2
-        for (int j=0; j < BOARD_SIZE; j++)
+        for (int j=0; j < boardSize; j++)
         {
             printf("|     |");
         }
         printf("\n");
         
         // Bottom edge
-        for (int j=0; j < BOARD_SIZE; j++)
+        for (int j=0; j < boardSize; j++)
         {
             printf("=======");
         }
@@ -506,9 +564,9 @@ void displayBoard(int board[BOARD_SIZE][BOARD_SIZE], int playerOneScore, int pla
     }
 }
 
-void push(struct stack *s, int item)
+void push(struct stack *s, int item, int boardSize)
 {
-    if (s->top == (BOARD_SIZE*BOARD_SIZE)-1)
+    if (s->top == (boardSize*boardSize)-1)
     {
         printf("Stack is full. Couldn't push %d onto stack\n", item);
         return;
@@ -548,7 +606,7 @@ void *pop_all(struct stack *s)
     return NULL;
 }
 
-void storeResults(struct stack *moveStack, int result, int mode)
+void storeResults(struct stack *moveStack, int result, int mode, int boardSize)
 {  
     time_t timer;
     char currentDateTime[26];
@@ -558,8 +616,7 @@ void storeResults(struct stack *moveStack, int result, int mode)
     tm_info = localtime(&timer);
 
     strftime(currentDateTime, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-    int moves[BOARD_SIZE*BOARD_SIZE] = {0};
-
+    int *moves = (int *) malloc((boardSize*boardSize) * sizeof(int *));
     int *i = NULL;
     i = pop(moveStack);
     int count = 0;
@@ -567,7 +624,7 @@ void storeResults(struct stack *moveStack, int result, int mode)
     FILE *output = NULL;
     char outputName[50] = "tic-tac-toe_results.csv";
     output = fopen(outputName, "a");
-    fprintf(output, "%s,%d,%d,", currentDateTime, mode, result);
+    fprintf(output, "%s,%d,%d,%d,", currentDateTime, mode, boardSize, result);
     if(i != NULL)
     {
         char space = ' ';
@@ -618,7 +675,7 @@ void loadResults(int *count, Result* results)
     {
         removeNewline(row);
         char *p = strtok (strdup(row), ",");
-        char *array[4];
+        char *array[5];
         int i = 0;
         // Split the current row into the char array
         while (p != NULL)
@@ -626,9 +683,9 @@ void loadResults(int *count, Result* results)
             array[i++] = p;
             p = strtok (NULL, ",");
         }       
-        
-        char *charMoves = strtok (strdup(array[3]), " ");
-        int intMoves[BOARD_SIZE * BOARD_SIZE];
+        int boardSize = atoi(array[2]);
+        char *charMoves = strtok (strdup(array[4]), " ");
+        int *intMoves = (int *) malloc((boardSize*boardSize) * sizeof(int *));
         // Split array[3] by " "
         // Convert each value to int
         // Add move to int array
@@ -642,7 +699,8 @@ void loadResults(int *count, Result* results)
         Result temp;
         strcpy(temp.date, array[0]);
         temp.mode = atoi(array[1]);
-        temp.result = atoi(array[2]);
+        temp.boardSize = boardSize;
+        temp.result = atoi(array[3]);
         memcpy(temp.moves, intMoves, sizeof(temp.moves)); 
         temp.moveCount = i;
         results[*count] = temp;
@@ -691,7 +749,7 @@ void processResults(int *count, Result* results)
         printf("X Wins: %d (%.0f%%) | O Wins: %d (%.0f%%)\n\n", playerOneWins, playerOneWinPercentage, playerTwoWins, playerTwoWinpercentage);
         
         // Print previous matches
-        printf(" # |       DATE       | MODE | RESULT | MOVES\n");
+        printf(" # |         DATE        | MODE | BOARD | RESULT | MOVES\n");
         for (int i = 0; i < *count; i++)
         {
             // NUMBER AND DATE
@@ -714,6 +772,9 @@ void processResults(int *count, Result* results)
             {
                 printf("PvE  | ");
             }
+
+            // SIZE
+            printf(" %dx%d  | ", results[i].boardSize, results[i].boardSize);
 
             // RESULT
             if (results[i].result == 1)
@@ -763,7 +824,7 @@ void getMatchNumber()
         
         do
         {
-            displayMenuOptions();
+            displayMenuOptions("");
             printf("Please enter a previous match number to replay (1-%d):\n", count);
             fgets(userInput, 100, stdin);
             option = atoi(userInput);
@@ -775,7 +836,8 @@ void getMatchNumber()
 
 void replayMatch(Result result, int matchNumber)
 {
-    int board[BOARD_SIZE][BOARD_SIZE] = {0};
+    int **board = (int **) malloc(result.boardSize * sizeof(int *));
+    initialiseBoard(board, result.boardSize);
     int currentPlayer = 0;
     for (int i = result.moveCount - 1; i >= 0; i--)
     {
@@ -787,39 +849,40 @@ void replayMatch(Result result, int matchNumber)
         {
             currentPlayer = 1;
         }
-        replayMatchDisplay(board, matchNumber);
+        replayMatchDisplay(board, matchNumber, result.boardSize);
         Sleep(1500);
-        updateBoard(board, result.moves[i], currentPlayer, 0);
+        updateBoard(board, result.boardSize, result.moves[i], currentPlayer, 0);
     }
-    replayMatchDisplay(board, matchNumber);
+    replayMatchDisplay(board, matchNumber, result.boardSize);
     printf("Match Replay Completed.\n");
     Sleep(1500);
-    displayMenuOptions();
+    displayMenuOptions("");
+    unallocateBoard(board, result.boardSize);
 }
 
-void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int matchNumber)
+void replayMatchDisplay(int **board, int matchNumber, int boardSize)
 {
-    displayMenuOptions();
+    displayMenuOptions("");
     printf("REPLAY OF MATCH #%d\n", matchNumber);
     // Top edge
-    for (int i=0; i < BOARD_SIZE; i++)
+    for (int i=0; i < boardSize; i++)
     {
         printf("=======");
     }
     printf("\n");
 
     int counter = 0;
-    for (int i=0; i < BOARD_SIZE; i++)
+    for (int i=0; i < boardSize; i++)
     {
         // Spacer 1
-        for (int j=0; j < BOARD_SIZE; j++)
+        for (int j=0; j < boardSize; j++)
         {
             printf("|     |");
         }
         printf("\n");
 
         // Block value
-        for (int j=0; j < BOARD_SIZE; j++)
+        for (int j=0; j < boardSize; j++)
         {
             counter++;
             if (board[i][j] == 0)
@@ -838,14 +901,14 @@ void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int matchNumber)
         printf("\n");
 
         // Spacer 2
-        for (int j=0; j < BOARD_SIZE; j++)
+        for (int j=0; j < boardSize; j++)
         {
             printf("|     |");
         }
         printf("\n");
         
         // Bottom edge
-        for (int j=0; j < BOARD_SIZE; j++)
+        for (int j=0; j < boardSize; j++)
         {
             printf("=======");
         }
@@ -853,9 +916,11 @@ void replayMatchDisplay(int board[BOARD_SIZE][BOARD_SIZE], int matchNumber)
     }
 }
 
-void computerVsComputer()
+void computerVsComputer(int boardSize)
 {
-    int board[BOARD_SIZE][BOARD_SIZE] = {0};
+    // Allocate memory for the board 2D array
+    int **board = (int **) malloc(boardSize * sizeof(int *));
+    initialiseBoard(board, boardSize);
     
     struct stack moveStack;
     init_stack(&moveStack);
@@ -865,23 +930,23 @@ void computerVsComputer()
     bool gameOver = false;
     int result = 0;
 
-    displayBoard(board, 0, 0, 0);
-    while(!gameOver && count < BOARD_SIZE*BOARD_SIZE)
+    displayBoard(board, boardSize, 0, 0, 0);
+    while(!gameOver && count < boardSize*boardSize)
     {
         count++;
         // Display board
         if (currentComputer)
         {
-            computerMove(board, &moveStack, 1);
+            computerMove(board, boardSize, &moveStack, 1);
         }
         else
         {
-            computerMove(board, &moveStack, -1);
+            computerMove(board, boardSize, &moveStack, -1);
         }
         Sleep(2000);
-        displayBoard(board, 0, 0, 1);
+        displayBoard(board, boardSize, 0, 0, 1);
         currentComputer = !currentComputer;
-        result = checkStatus(board);
+        result = checkStatus(board, boardSize);
         if (result != 0)
         {
             gameOver = true;
@@ -899,9 +964,10 @@ void computerVsComputer()
     {
         printf("Match Tied\n");
     }
+    unallocateBoard(board, boardSize);
 }
 
-int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer, struct stack *moveStack, struct stack *redoStack, int playerOneScore, int playerTwoScore, int mode)
+int playerMove(int **board, int boardSize, int *count, int *currentPlayer, struct stack *moveStack, struct stack *redoStack, int playerOneScore, int playerTwoScore, int mode)
 {
     char *end;
     char buf[100];
@@ -910,11 +976,11 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
     {
         if (*currentPlayer == 1)
         {
-            printf("(X) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
+            printf("(X) Enter a position 1-%d\n", boardSize*boardSize);
         }
         else if (*currentPlayer == -1)
         {
-            printf("(O) Enter a position 1-%d\n", BOARD_SIZE*BOARD_SIZE);
+            printf("(O) Enter a position 1-%d\n", boardSize*boardSize);
         }
         do {
             if (!fgets(buf, sizeof buf, stdin))
@@ -935,15 +1001,15 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
                     popped = pop(moveStack);
                     if (popped != NULL)
                     {
-                        push(redoStack, *popped);
+                        push(redoStack, *popped, boardSize);
                         *count -= 1;
                         *currentPlayer *= -1;
-                        updateBoard(board, *popped, *currentPlayer, 1);
+                        updateBoard(board, boardSize, *popped, *currentPlayer, 1);
                     }
                 }
                 if (mode == 2 && (*count == 2 && *currentPlayer == 1))
                 {
-                    displayBoard(board, playerOneScore, playerTwoScore, *count);
+                    displayBoard(board, boardSize, playerOneScore, playerTwoScore, *count);
                     printf("Cannot undo your opponents first move\n");
                 }
                 else
@@ -952,16 +1018,16 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
                     popped = pop(moveStack);
                     if (popped != NULL)
                     {
-                        push(redoStack, *popped);
+                        push(redoStack, *popped, boardSize);
                         *count -= 1;
                         *currentPlayer *= -1;
-                        updateBoard(board, *popped, *currentPlayer, 1);
-                        displayBoard(board, playerOneScore, playerTwoScore, *count);
+                        updateBoard(board, boardSize, *popped, *currentPlayer, 1);
+                        displayBoard(board, boardSize, playerOneScore, playerTwoScore, *count);
                         break;
                     }
                     else
                     {
-                        displayBoard(board, playerOneScore, playerTwoScore, *count);
+                        displayBoard(board, boardSize, playerOneScore, playerTwoScore, *count);
                         printf("Nothing to undo\n");
                         break;
                     }
@@ -977,9 +1043,9 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
                     popped = pop(redoStack);
                     if (popped != NULL)
                     {
-                        push(moveStack, *popped);
+                        push(moveStack, *popped, boardSize);
                         *count += 1;
-                        updateBoard(board, *popped, *currentPlayer, 0);
+                        updateBoard(board, boardSize, *popped, *currentPlayer, 0);
                         *currentPlayer *= -1;
                     }
                 }
@@ -987,16 +1053,16 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
                 popped = pop(redoStack);
                 if (popped != NULL)
                 {
-                    push(moveStack, *popped);
+                    push(moveStack, *popped, boardSize);
                     *count += 1;
-                    updateBoard(board, *popped, *currentPlayer, 0);
-                    displayBoard(board, playerOneScore, playerTwoScore, *count);
+                    updateBoard(board, boardSize, *popped, *currentPlayer, 0);
+                    displayBoard(board, boardSize, playerOneScore, playerTwoScore, *count);
                     *currentPlayer *= -1;
                     break;
                 }
                 else
                 {
-                    displayBoard(board, playerOneScore, playerTwoScore, *count);
+                    displayBoard(board, boardSize, playerOneScore, playerTwoScore, *count);
                     printf("Nothing to redo\n");
                     break;
                 }
@@ -1004,12 +1070,12 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
             else
             {
                 int input = strtol(buf, &end, 10);
-                if(input > 0 && input <= (BOARD_SIZE * BOARD_SIZE))
+                if(input > 0 && input <= (boardSize * boardSize))
                 {
-                    int valid = updateBoard(board, input, *currentPlayer, 0);
+                    int valid = updateBoard(board, boardSize, input, *currentPlayer, 0);
                     if(valid == -1)
                     {
-                        displayBoard(board, playerOneScore, playerTwoScore, *count);
+                        displayBoard(board, boardSize, playerOneScore, playerTwoScore, *count);
                         printf("Position %d is already taken\n", input);
                         break;
                     }
@@ -1018,13 +1084,13 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
                         validMove = true;
                         pop_all(redoStack);
                         input *= *currentPlayer;
-                        push(moveStack, input);
+                        push(moveStack, input, boardSize);
                         break;
                     }
                 }
                 else
                 {
-                    displayBoard(board, playerOneScore, playerTwoScore, *count);
+                    displayBoard(board, boardSize, playerOneScore, playerTwoScore, *count);
                     printf("Invalid input\n");
                     break;
                 }
@@ -1035,10 +1101,10 @@ int playerMove(int board[BOARD_SIZE][BOARD_SIZE], int *count, int *currentPlayer
     return 0;
 }
 
-int minimax(int board[BOARD_SIZE][BOARD_SIZE], int player)
+int minimax(int **board, int boardSize, int player)
 {
     // Check the position for the current player on the board
-    int winner = checkStatus(board);
+    int winner = checkStatus(board, boardSize);
     if (winner != 0)
     {
         return winner*player;
@@ -1048,15 +1114,15 @@ int minimax(int board[BOARD_SIZE][BOARD_SIZE], int player)
     // Initialise score with -2 (a losing move is better than no move)
     int score = -2;
     int i, j;
-    for (i = 0; i < BOARD_SIZE; i++)
+    for (i = 0; i < boardSize; i++)
     {
-        for (j = 0; j < BOARD_SIZE; j++)
+        for (j = 0; j < boardSize; j++)
         {
             if(board[i][j] == 0)
             {
                 board[i][j] = player;
                 // Check the resulting score of the current move
-                int currentScore = -minimax(board, player*-1);
+                int currentScore = -minimax(board, boardSize, player*-1);
                 // Select the worst score for the opponent
                 if(currentScore > score)
                 {
@@ -1078,7 +1144,7 @@ int minimax(int board[BOARD_SIZE][BOARD_SIZE], int player)
     }
 }
 
-void computerMove(int board[BOARD_SIZE][BOARD_SIZE], struct stack *moveStack, int value)
+void computerMove(int **board, int boardSize, struct stack *moveStack, int value)
 {
     if (value == 1)
     {
@@ -1092,14 +1158,14 @@ void computerMove(int board[BOARD_SIZE][BOARD_SIZE], struct stack *moveStack, in
     int col = -1;
     int score = -2;
     int i, j;
-    for (i = 0; i < BOARD_SIZE; i++)
+    for (i = 0; i < boardSize; i++)
     {
-        for (j = 0; j < BOARD_SIZE; j++)
+        for (j = 0; j < boardSize; j++)
         {
             if(board[i][j] == 0)
             {
                 board[i][j] = value;
-                int currentScore = -minimax(board, value * (-1));
+                int currentScore = -minimax(board, boardSize, value * (-1));
                 board[i][j] = 0;
                 if(currentScore > score) {
                     score = currentScore;
@@ -1113,5 +1179,5 @@ void computerMove(int board[BOARD_SIZE][BOARD_SIZE], struct stack *moveStack, in
     board[row][col] = value;
     // Value will be 1 or -1. Multiply the cell by the value to specify X or O
     int number = value * ((row * 3) + (col + 1));
-    push(moveStack, number);
+    push(moveStack, number, boardSize);
 }
