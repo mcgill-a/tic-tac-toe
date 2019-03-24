@@ -513,19 +513,60 @@ int checkDiagonal(int** board, int boardSize, int position)
         tempColumn += 1;
         tempRow -= 1;
     }
-    printf("b[%d][%d] : req-1 = %d\n", tempRow, tempColumn, required-1);
+
     int loopAmount = tempColumn - tempRow - required + 2;
-    //printf("Loop Amount: %d | TC: %d TR: %d: RQ: %d + 2\n", loopAmount, tempColumn, tempRow, required);
     if (loopAmount > 0)
     {
-        //for (int i = 0; i <= boardSize - tempColumn; i++)
+        for(int i = 0; i < loopAmount; i++)
+        {
+            currentGroup = 0;
+            for (int j = i; j < i+required; j++)
+            {
+                int currentValue = board[tempRow+j][tempColumn-j];
+                if (currentValue == 1 || currentValue == -1)
+                {
+                    currentGroup += currentValue;
+                }
+            }
+            if (currentGroup == required)
+            {
+                return 1;
+            }
+            else if (currentGroup == (-1) * required)
+            {
+                return -1;
+            }
+            else
+            {
+                currentGroup = 0;
+            }
+        }
+    }
+
+    // FOR DIAGONAL STARTING LEFT AND GOING DOWN TO THE RIGHT
+
+    tempColumn = column;
+    tempRow = row;
+
+    // Get the top left edge
+    while (tempColumn > 0 && tempRow > 0)
+    {
+        tempColumn -= 1;
+        tempRow -= 1;
+    }
+    //printf("b[%d][%d] : req-1 = %d\n", tempRow, tempColumn, required-1);
+    loopAmount = required - tempColumn - tempRow - 2;
+    //printf("Left D Loop Amount: %d | TC: %d TR: %d: RQ: %d\n", loopAmount, tempColumn, tempRow, required);
+    if (loopAmount > 0)
+    {
+        
         for(int i = 0; i < loopAmount; i++)
         {
             //printf("Loop %d\n", i);
             currentGroup = 0;
             for (int j = i; j < i+required; j++)
             {
-                int currentValue = board[tempRow+j][tempColumn-j];
+                int currentValue = board[tempRow+j][tempColumn+j];
                 if (currentValue == 1 || currentValue == -1)
                 {
                     currentGroup += currentValue;
@@ -546,58 +587,6 @@ int checkDiagonal(int** board, int boardSize, int position)
                 currentGroup = 0;
             }
         }
-        
-    }
-
-    // Loop once for 3x3, (boardSize - 2) times for 5x5 and 7x7
-    loopAmount = boardSize - 3;
-    if (boardSize == 3)
-    {
-        loopAmount = 1;
-    }
-    // Loop through the possible right diagonal groups of three
-    int level = 0;
-    for (int i = 0; i < loopAmount; i++)
-    {
-        currentGroup = 0;
-        for (int j = i; j < i+required; j++)
-        {
-            currentGroup += board[j][column];
-        }
-        if (currentGroup == required)
-        {
-            return 1;
-        }
-        else if (currentGroup == (-1) * required)
-        {
-            return -1;
-        }
-        else
-        {
-            currentGroup = 0;
-        }
-        level++;
-    }
-
-    level = boardSize - 1;
-    // Loop through the possible left diagonal groups of three
-    for (int i = 0; i < boardSize - 2; i++)
-    {
-        int currentGroup = 0;
-        currentGroup += board[i][level];
-        currentGroup += board[i+1][level-1];
-        currentGroup += board[i+2][level-2];
-        if (currentGroup == 3)
-        {
-            // X wins
-            return 1;
-        }
-        else if (currentGroup == -3)
-        {
-            // O wins
-            return -1;
-        }
-        level--;
     }
 
     // No winner yet
