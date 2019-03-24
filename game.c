@@ -395,7 +395,7 @@ int checkStatus(int** board, int boardSize, int position)
         return status;
     }
     // Check for a diagonal win
-    //status = checkDiagonal(board, boardSize, position);
+    status = checkDiagonal(board, boardSize, position);
     if(status != 0)
     {
         return status;
@@ -492,23 +492,89 @@ int checkVertical(int** board, int boardSize, int position)
 
 int checkDiagonal(int** board, int boardSize, int position)
 {
-    int level = 0;
-    // Loop through the possible right diagonal groups of three
-    for (int i = 0; i < boardSize - 2; i++)
+    int row = ((position -1) / boardSize + 1) - 1;
+    int column = (boardSize -1) - (((row+1) * boardSize) - position);
+
+    // If board size > 3, need 4 in a row
+    int currentGroup;
+    int required = 3;
+    if (boardSize > 3)
     {
-        int currentGroup = 0;
-        currentGroup += board[i][level];
-        currentGroup += board[i+1][level+1];
-        currentGroup += board[i+2][level+2];
-        if (currentGroup == 3)
+        required = 4;
+    }
+    int tempColumn = column;
+    int tempRow = row;
+
+    // FOR DIAGONAL STARTING RIGHT AND GOING DOWN TO THE LEFT
+
+    // Get  the top right edge
+    while (tempColumn < boardSize -1 && tempRow > 0)
+    {
+        tempColumn += 1;
+        tempRow -= 1;
+    }
+    printf("b[%d][%d] : req-1 = %d\n", tempRow, tempColumn, required-1);
+    int loopAmount = tempColumn - tempRow - required + 2;
+    //printf("Loop Amount: %d | TC: %d TR: %d: RQ: %d + 2\n", loopAmount, tempColumn, tempRow, required);
+    if (loopAmount > 0)
+    {
+        //for (int i = 0; i <= boardSize - tempColumn; i++)
+        for(int i = 0; i < loopAmount; i++)
         {
-            // X wins
+            //printf("Loop %d\n", i);
+            currentGroup = 0;
+            for (int j = i; j < i+required; j++)
+            {
+                int currentValue = board[tempRow+j][tempColumn-j];
+                if (currentValue == 1 || currentValue == -1)
+                {
+                    currentGroup += currentValue;
+                }
+                //printf("CG: %d board[%d][%d] >> ", currentGroup, tempRow+j, tempColumn-j);
+            }
+            //printf("\n");
+            if (currentGroup == required)
+            {
+                return 1;
+            }
+            else if (currentGroup == (-1) * required)
+            {
+                return -1;
+            }
+            else
+            {
+                currentGroup = 0;
+            }
+        }
+        
+    }
+
+    // Loop once for 3x3, (boardSize - 2) times for 5x5 and 7x7
+    loopAmount = boardSize - 3;
+    if (boardSize == 3)
+    {
+        loopAmount = 1;
+    }
+    // Loop through the possible right diagonal groups of three
+    int level = 0;
+    for (int i = 0; i < loopAmount; i++)
+    {
+        currentGroup = 0;
+        for (int j = i; j < i+required; j++)
+        {
+            currentGroup += board[j][column];
+        }
+        if (currentGroup == required)
+        {
             return 1;
         }
-        else if (currentGroup == -3)
+        else if (currentGroup == (-1) * required)
         {
-            // O wins
             return -1;
+        }
+        else
+        {
+            currentGroup = 0;
         }
         level++;
     }
