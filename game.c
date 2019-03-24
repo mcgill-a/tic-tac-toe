@@ -296,7 +296,7 @@ int play(int** board, int boardSize, int playerOneScore, int playerTwoScore, int
         if (mode == 2 && currentPlayer == -1)
         {
             computerMove(board, boardSize, &moveStack, -1);
-            Sleep(2000);
+            //Sleep(2000);
         }
         else
         {
@@ -383,25 +383,27 @@ int checkStatus(int** board, int boardSize)
 
 int checkHorizontal(int** board, int boardSize)
 {
-    int rowTotal;
+    int currentGroup;
     // Loop through each row
     for(int i = 0; i < boardSize; i++)
     {
-        rowTotal = 0;
         // Loop through each column in the row
-        for (int j = 0; j < boardSize; j++)
+        for (int j = 0; j < boardSize-2; j++)
         {
-            rowTotal += board[i][j];
-        }
-        if (rowTotal == boardSize)
-        {
-            // X wins
-            return 1;
-        }
-        else if (rowTotal == boardSize * (-1))
-        {
-            // O wins
-            return -1;
+            currentGroup = 0;
+            currentGroup += board[i][j];
+            currentGroup += board[i][j+1];
+            currentGroup += board[i][j+2];
+            if (currentGroup == 3)
+            {
+                // X wins
+                return 1;
+            }
+            else if (currentGroup == -3)
+            {
+                // O wins
+                return -1;
+            }
         }
     }
     // No winner yet
@@ -410,25 +412,27 @@ int checkHorizontal(int** board, int boardSize)
 
 int checkVertical(int** board, int boardSize)
 {
-    int columnTotal;
+    int currentGroup;
     // Loop through each column
     for(int i = 0; i < boardSize; i++)
     {
-        columnTotal = 0;
         // Loop through each row in the column
-        for (int j = 0; j < boardSize; j++)
+        for (int j = 0; j < boardSize-2; j++)
         {
-            columnTotal += board[j][i];
-        }
-        if (columnTotal == boardSize)
-        {
-            // X wins
-            return 1;
-        }
-        else if (columnTotal == boardSize * (-1))
-        {
-            // O wins
-            return -1;
+            currentGroup = 0;
+            currentGroup += board[j][i];
+            currentGroup += board[j+1][i];
+            currentGroup += board[j+2][i];
+            if (currentGroup == 3)
+            {
+                // X wins
+                return 1;
+            }
+            else if (currentGroup == -3)
+            {
+                // O wins
+                return -1;
+            }
         }
     }
     // No winner yet
@@ -437,56 +441,46 @@ int checkVertical(int** board, int boardSize)
 
 int checkDiagonal(int** board, int boardSize)
 {
-    int rightDiagonal = 0, leftDiagonal = 0, row = 0, column = 0;
-
-    /*
-        Right Diagonal:
-        (3x3) >> Positions 1, 5, 9 || 0, 4, 8
-        Therefore, skip amount >> BOARD_SIZE + 1
-    */
-
-    // Loop through the right diagonal values
-    for(int i = 0; i < boardSize * boardSize; i += (boardSize + 1))
+    int level = 0;
+    // Loop through the possible right diagonal groups of three
+    for (int i = 0; i < boardSize - 2; i++)
     {
-        row = ((i - 1) / boardSize + 1) - 1;
-        column = (boardSize -1) - (((row+1) * boardSize) - (i+1));
-        rightDiagonal += board[row][column];       
+        int currentGroup = 0;
+        currentGroup += board[i][level];
+        currentGroup += board[i+1][level+1];
+        currentGroup += board[i+2][level+2];
+        if (currentGroup == 3)
+        {
+            // X wins
+            return 1;
+        }
+        else if (currentGroup == -3)
+        {
+            // O wins
+            return -1;
+        }
+        level++;
     }
 
-    if (rightDiagonal == boardSize)
+    level = boardSize - 1;
+    // Loop through the possible left diagonal groups of three
+    for (int i = 0; i < boardSize - 2; i++)
     {
-        // X wins
-        return 1;
-    }
-    else if (rightDiagonal == boardSize * (-1))
-    {
-        // O wins
-        return -1;
-    }
-
-    /*
-        Left Diagonal:
-        (3x3) >> Positions 3, 5, 7 || 2, 4, 6
-        Therefore, skip amount >> BOARD_SIZE - 1
-    */
-
-   // Loop through the right diagonal values
-    for(int i = boardSize-1; i < boardSize * boardSize - (boardSize-1); i += (boardSize - 1))
-    {
-        row = ((i - 1) / boardSize + 1) - 1;
-        column = (boardSize -1) - (((row+1) * boardSize) - (i+1));
-        leftDiagonal += board[row][column];
-    }
-
-    if (leftDiagonal == boardSize)
-    {
-        // X wins
-        return 1;
-    }
-    else if (leftDiagonal == boardSize * (-1))
-    {
-        // O wins
-        return -1;
+        int currentGroup = 0;
+        currentGroup += board[i][level];
+        currentGroup += board[i+1][level-1];
+        currentGroup += board[i+2][level-2];
+        if (currentGroup == 3)
+        {
+            // X wins
+            return 1;
+        }
+        else if (currentGroup == -3)
+        {
+            // O wins
+            return -1;
+        }
+        level--;
     }
 
     // No winner yet
