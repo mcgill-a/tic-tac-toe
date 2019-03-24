@@ -60,6 +60,7 @@ void getMatchNumber();
 void computerVsComputer(int);
 int playerMove(int** board, int, int*, int*, struct stack*, struct stack*, int, int, int);
 void computerMove(int** board, int, struct stack*, int);
+void randomComputerMove(int **board, int, struct stack*, int);
 
 struct stack
 {
@@ -295,8 +296,16 @@ int play(int** board, int boardSize, int playerOneScore, int playerTwoScore, int
         count++;
         if (mode == 2 && currentPlayer == -1)
         {
-            computerMove(board, boardSize, &moveStack, -1);
-            //Sleep(2000);
+            // Start with a random move
+            if(count <= 2 || boardSize > 3)
+            {
+                randomComputerMove(board, boardSize, &moveStack, -1);
+            }
+            else
+            {
+                computerMove(board, boardSize, &moveStack, -1);
+            }
+            Sleep(2000);
         }
         else
         {
@@ -1021,7 +1030,6 @@ void computerVsComputer(int boardSize)
     int count = 0;
     bool gameOver = false;
     int result = 0;
-
     displayBoard(board, boardSize, 0, 0);
     while(!gameOver && count < boardSize*boardSize)
     {
@@ -1029,11 +1037,27 @@ void computerVsComputer(int boardSize)
         // Display board
         if (currentComputer)
         {
-            computerMove(board, boardSize, &moveStack, 1);
+            // Start with a random move
+            if(count <= 2 || boardSize > 3)
+            {
+                randomComputerMove(board, boardSize, &moveStack, 1);
+            }
+            else
+            {
+                computerMove(board, boardSize, &moveStack, 1);
+            }
         }
         else
         {
-            computerMove(board, boardSize, &moveStack, -1);
+            // Start with a random move
+            if(count <= 2)
+            {
+                randomComputerMove(board, boardSize, &moveStack, -1);
+            }
+            else
+            {
+                computerMove(board, boardSize, &moveStack, -1);
+            }
         }
         Sleep(2000);
         displayBoard(board, boardSize, 0, 0);
@@ -1044,11 +1068,11 @@ void computerVsComputer(int boardSize)
             gameOver = true;
         }
     }
-    if (result == -1)
+    if (result == 1)
     {
         printf("X Wins\n");
     }
-    else if (result == 1)
+    else if (result == -1)
     {
         printf("O Wins\n");
     }
@@ -1236,8 +1260,55 @@ int minimax(int **board, int boardSize, int player)
     }
 }
 
+void randomComputerMove(int **board, int boardSize, struct stack *moveStack, int value)
+{  
+    if (value == 1)
+    {
+        printf("Computer (X) is thinking..\n");
+    }
+    else if (value == -1)
+    {
+        printf("Computer (0) is thinking..\n");
+    }
+    int available[81];
+    int count = 0;
+    for (int i = 0; i < boardSize; i++)
+    {
+        for (int j = 0; j < boardSize; j++)
+        {
+            if(board[i][j] == 0)
+            {
+                available[count] = (i*boardSize) + (j+1);
+                count++;
+            }
+            
+        }
+        printf("\n");
+    }
+    
+    if (count > 0)
+    {
+        srand( time(NULL) );
+        int move = rand() % (count);
+        printf("a[%d] %d >> %d\n", move, value, available[move]);
+        updateBoard(board, boardSize, available[move], value, 0);
+        push(moveStack, (value * available[move]), boardSize);
+    }
+    
+}
+
 void computerMove(int **board, int boardSize, struct stack *moveStack, int value)
 {
+    time_t timer;
+    char currentDateTime[26];
+    struct tm* tm_info;
+
+    time(&timer);
+    tm_info = localtime(&timer);
+
+    strftime(currentDateTime, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+    printf("MINIMAX STARTED: %s\n", currentDateTime);
+    
     if (value == 1)
     {
         printf("Computer (X) is thinking..\n");
@@ -1259,7 +1330,8 @@ void computerMove(int **board, int boardSize, struct stack *moveStack, int value
                 board[i][j] = value;
                 int currentScore = -minimax(board, boardSize, value * (-1));
                 board[i][j] = 0;
-                if(currentScore > score) {
+                if(currentScore > score)
+                {
                     score = currentScore;
                     row = i;
                     col = j;
@@ -1272,4 +1344,10 @@ void computerMove(int **board, int boardSize, struct stack *moveStack, int value
     // Value will be 1 or -1. Multiply the cell by the value to specify X or O
     int number = value * ((row * 3) + (col + 1));
     push(moveStack, number, boardSize);
+
+    time(&timer);
+    tm_info = localtime(&timer);
+
+    strftime(currentDateTime, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+    printf("MINIMAX COMPLETED: %s\n", currentDateTime);
 }
