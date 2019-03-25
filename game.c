@@ -68,6 +68,10 @@ void computerVsComputer(int);
 int playerMove(int** board, int, int*, int*, struct stack*, struct stack*, int, int, int);
 int computerMove(int** board, int, struct stack*, int);
 int randomComputerMove(int **board, int, struct stack*, int);
+int exhaustiveCheckStatus(int**, int);
+int exhaustiveCheckHorizontal(int**, int);
+int exhaustiveCheckVertical(int**, int);
+int exhaustiveCheckDiagonal(int**, int);
 
 int main(void)
 {
@@ -301,10 +305,12 @@ int play(int** board, int boardSize, int playerOneScore, int playerTwoScore, int
             if(count <= 2 || boardSize > 3)
             {
                 latestPosition = randomComputerMove(board, boardSize, &moveStack, -1);
+                printf("Random move\n");
             }
             else
             {
                 latestPosition = computerMove(board, boardSize, &moveStack, -1);
+                printf("Minimax move\n");
             }
             // Wait 2 seconds to simulate the computer thinking..
             Sleep(2000);
@@ -512,10 +518,12 @@ int checkDiagonal(int** board, int boardSize, int position)
     }
 
     loopAmount = tempColumn - tempRow - required + 2;
+    
     if (loopAmount > 0)
     {
         for(int i = 0; i < loopAmount; i++)
         {
+            
             currentGroup = 0;
             // Sum the current group of values and check if they meet the win requirement
             for (int j = i; j < i+required; j++)
@@ -632,6 +640,7 @@ void displayBoard(int** board, int boardSize, int playerOneScore, int playerTwoS
 {
     system("cls");
     printf("Tic Tac Toe (%dx%d)\n", boardSize, boardSize);
+    printf("Commands: 'undo', 'redo'\n");
     printf("SCORE: (X) %d - %d (O)\n", playerOneScore, playerTwoScore);
     // Top edge
     for (int i=0; i < boardSize; i++)
@@ -1111,7 +1120,7 @@ void computerVsComputer(int boardSize)
     struct stack moveStack;
     init_stack(&moveStack);
 
-    bool currentComputer = false;
+    int currentPlayer = 1;
     int latestPosition;
     int count = 0;
     bool gameOver = false;
@@ -1121,7 +1130,7 @@ void computerVsComputer(int boardSize)
     {
         count++;
         // Display board
-        if (currentComputer)
+        if (currentPlayer == 1)
         {
             // Start with a random move
             if(count <= 2 || boardSize > 3)
@@ -1148,7 +1157,7 @@ void computerVsComputer(int boardSize)
         // Wait 2 seconds to simulate time to think..
         Sleep(2000);
         displayBoard(board, boardSize, 0, 0);
-        currentComputer = !currentComputer;
+        currentPlayer = currentPlayer * (-1);
         // Only check the result if it is possible to win yet
         if(boardSize == 3 && count >= 5)
         {
@@ -1319,9 +1328,9 @@ int playerMove(int **board, int boardSize, int *count, int *currentPlayer, struc
 int minimax(int **board, int boardSize, int player, int position)
 {
     // Check the position for the current player on the board
-    int winner = checkStatus(board, boardSize, position);
+    int winner = exhaustiveCheckStatus(board, boardSize);
     if (winner != 0)
-    {
+    { 
         return winner*player;
     }
 
@@ -1358,43 +1367,6 @@ int minimax(int **board, int boardSize, int player, int position)
     {
         return 0;
     }
-}
-
-int randomComputerMove(int **board, int boardSize, struct stack *moveStack, int value)
-{  
-    if (value == 1)
-    {
-        printf("Computer (X) is thinking..\n");
-    }
-    else if (value == -1)
-    {
-        printf("Computer (0) is thinking..\n");
-    }
-    int available[81];
-    int count = 0;
-    for (int i = 0; i < boardSize; i++)
-    {
-        for (int j = 0; j < boardSize; j++)
-        {
-            if(board[i][j] == 0)
-            {
-                available[count] = (i*boardSize) + (j+1);
-                count++;
-            }
-            
-        }
-        printf("\n");
-    }
-    
-    if (count > 0)
-    {
-        srand( time(NULL) );
-        int move = rand() % (count);
-        updateBoard(board, boardSize, available[move], value, 0);
-        push(moveStack, (value * available[move]), boardSize);
-        return available[move];
-    }
-    return -1;
 }
 
 int computerMove(int **board, int boardSize, struct stack *moveStack, int value)
@@ -1436,4 +1408,174 @@ int computerMove(int **board, int boardSize, struct stack *moveStack, int value)
     int number = value * ((row * boardSize) + (col + 1));
     push(moveStack, number, boardSize);
     return ((row * boardSize) + (col + 1));
+}
+
+int randomComputerMove(int **board, int boardSize, struct stack *moveStack, int value)
+{  
+    if (value == 1)
+    {
+        printf("Computer (X) is thinking..\n");
+    }
+    else if (value == -1)
+    {
+        printf("Computer (0) is thinking..\n");
+    }
+    int available[81];
+    int count = 0;
+    for (int i = 0; i < boardSize; i++)
+    {
+        for (int j = 0; j < boardSize; j++)
+        {
+            if(board[i][j] == 0)
+            {
+                available[count] = (i*boardSize) + (j+1);
+                count++;
+            }   
+        }
+    }
+    
+    if (count > 0)
+    {
+        srand( time(NULL) );
+        int move = rand() % (count);
+        updateBoard(board, boardSize, available[move], value, 0);
+        push(moveStack, (value * available[move]), boardSize);
+        return available[move];
+    }
+    return -1;
+}
+
+// Minimax requires an exhaustive check rather than just on the latest position
+// otherwise it will miss some of the opponents potential wins
+int exhaustiveCheckStatus(int** board, int boardSize)
+{
+    int status = 0;
+    // Check for a horizontal win
+    status = exhaustiveCheckHorizontal(board, boardSize);
+    if(status != 0)
+    {
+        return status;
+    }
+    // Check for a vertical win
+    status = exhaustiveCheckVertical(board, boardSize);
+    if(status != 0)
+    {
+        return status;
+    }
+    // Check for a diagonal win
+    status = exhaustiveCheckDiagonal(board, boardSize);
+    if(status != 0)
+    {
+        return status;
+    }
+    //  0 >> No winner
+    // +1 >> X wins
+    // -1 >> O wins
+    return 0;
+}
+
+int exhaustiveCheckHorizontal(int** board, int boardSize)
+{
+    int currentGroup;
+    // Loop through each row
+    for(int i = 0; i < boardSize; i++)
+    {
+        // Loop through each column in the row
+        for (int j = 0; j < boardSize-2; j++)
+        {
+            currentGroup = 0;
+            currentGroup += board[i][j];
+            currentGroup += board[i][j+1];
+            currentGroup += board[i][j+2];
+            if (currentGroup == 3)
+            {
+                // X wins
+                return 1;
+            }
+            else if (currentGroup == -3)
+            {
+                // O wins
+                return -1;
+            }
+        }
+    }
+    // No winner yet
+    return 0;
+}
+
+int exhaustiveCheckVertical(int** board, int boardSize)
+{
+    int currentGroup;
+    // Loop through each column
+    for(int i = 0; i < boardSize; i++)
+    {
+        // Loop through each row in the column
+        for (int j = 0; j < boardSize-2; j++)
+        {
+            currentGroup = 0;
+            currentGroup += board[j][i];
+            currentGroup += board[j+1][i];
+            currentGroup += board[j+2][i];
+            if (currentGroup == 3)
+            {
+                // X wins
+                return 1;
+            }
+            else if (currentGroup == -3)
+            {
+                // O wins
+                return -1;
+            }
+        }
+    }
+    // No winner yet
+    return 0;
+}
+
+int exhaustiveCheckDiagonal(int** board, int boardSize)
+{
+    int level = 0;
+    // Loop through the possible right diagonal groups of three
+    for (int i = 0; i < boardSize - 2; i++)
+    {
+        int currentGroup = 0;
+        currentGroup += board[i][level];
+        currentGroup += board[i+1][level+1];
+        currentGroup += board[i+2][level+2];
+        if (currentGroup == 3)
+        {
+            // X wins
+            return 1;
+        }
+        else if (currentGroup == -3)
+        {
+            // O wins
+            return -1;
+        }
+        level++;
+    }
+
+    level = boardSize - 1;
+    // Loop through the possible left diagonal groups of three
+    for (int i = 0; i < boardSize - 2; i++)
+    {
+        int currentGroup = 0;
+        currentGroup += board[i][level];
+        currentGroup += board[i+1][level-1];
+        currentGroup += board[i+2][level-2];
+        if (currentGroup == 3)
+        {
+            // X wins
+            return 1;
+        }
+        else if (currentGroup == -3)
+        {
+            // O wins
+            return -1;
+        }
+        level--;
+    }
+
+    // No winner yet
+    return 0;
 }
