@@ -52,5 +52,5 @@ Mkfile.old
 dkms.conf
 
 # Other
-tic-tac-toe_results.csv
+*.csv
 .vscode/
