@@ -640,7 +640,7 @@ void printCharacter(char value, int line)
 
 void displayBoard(int** board, int boardSize, int playerOneScore, int playerTwoScore)
 {
-    //system("cls");
+    system("cls");
     if (boardSize == 3)
     {
         printf("Tic Tac Toe (%dx%d) - 3 in a row to win\n", boardSize, boardSize);
