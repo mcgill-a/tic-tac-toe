@@ -68,10 +68,6 @@ void computerVsComputer(int);
 int playerMove(int** board, int, int*, int*, struct stack*, struct stack*, int, int, int);
 int computerMove(int** board, int, struct stack*, int);
 int randomComputerMove(int **board, int, struct stack*, int);
-int exhaustiveCheckStatus(int**, int);
-int exhaustiveCheckHorizontal(int**, int);
-int exhaustiveCheckVertical(int**, int);
-int exhaustiveCheckDiagonal(int**, int);
 
 int main(void)
 {
@@ -302,7 +298,7 @@ int play(int** board, int boardSize, int playerOneScore, int playerTwoScore, int
         if (mode == 2 && currentPlayer == -1)
         {
             // Start the game with a random move then use the minimax function
-            if(count <= 2)
+            if(count <= 2 || boardSize > 3)
             {
                 latestPosition = randomComputerMove(board, boardSize, &moveStack, -1);
                 //printf("Random move\n");
@@ -693,6 +689,7 @@ void displayBoard(int** board, int boardSize, int playerOneScore, int playerTwoS
                 {
                     printCharacter('O', line);
                 }
+                
                 else
                 {
                     if (line == 3)
@@ -712,6 +709,7 @@ void displayBoard(int** board, int boardSize, int playerOneScore, int playerTwoS
                     }
                     
                 }
+                
                 printf("|");
             }
             printf("\n");
@@ -1037,7 +1035,7 @@ void replayMatch(Result result, int matchNumber)
 void replayMatchDisplay(int **board, int matchNumber, int boardSize)
 {
     displayMenuOptions("");
-    printf("REPLAY OF MATCH #%d\n", matchNumber);
+    printf("6\n\nREPLAY OF MATCH #%d\n", matchNumber);
     // Top edge
     for (int i=0; i < boardSize; i++)
     {
@@ -1454,162 +1452,4 @@ int randomComputerMove(int **board, int boardSize, struct stack *moveStack, int 
         return available[move];
     }
     return -1;
-}
-
-// For minimax to never lose it requires an exhaustive check rather than a selection check
-// otherwise it will miss some of the opponents potential wins
-int exhaustiveCheckStatus(int** board, int boardSize)
-{
-    int status = 0;
-    // Check for a horizontal win
-    status = exhaustiveCheckHorizontal(board, boardSize);
-    if(status != 0)
-    {
-        return status;
-    }
-    // Check for a vertical win
-    status = exhaustiveCheckVertical(board, boardSize);
-    if(status != 0)
-    {
-        return status;
-    }
-    // Check for a diagonal win
-    status = exhaustiveCheckDiagonal(board, boardSize);
-    if(status != 0)
-    {
-        return status;
-    }
-    //  0 >> No winner
-    // +1 >> X wins
-    // -1 >> O wins
-    return 0;
-}
-
-int exhaustiveCheckHorizontal(int** board, int boardSize)
-{
-    int required = 3;
-    if (boardSize > 3)
-    {
-        required = 4;
-    }
-    int currentGroup;
-    // Loop through each row
-    for(int i = 0; i < boardSize; i++)
-    {
-        // Loop through each row in the column
-        int loopAmount = boardSize - 3;
-        if (loopAmount < 1)
-        {
-            loopAmount = 1;
-        }
-        // Loop through each column in the row
-        for (int j = 0; j < loopAmount; j++)
-        {
-            currentGroup = 0;
-            for (int k = 0; k < required; k++)
-            {
-                currentGroup += board[i][j+k];
-            }
-            if (currentGroup == required)
-            {
-                // X wins
-                return 1;
-            }
-            else if (currentGroup == (-1) * required)
-            {
-                // O wins
-                return -1;
-            }
-        }
-    }
-    // No winner yet
-    return 0;
-}
-
-int exhaustiveCheckVertical(int** board, int boardSize)
-{
-    int required = 3;
-    if (boardSize > 3)
-    {
-        required = 4;
-    }
-    int currentGroup;
-    // Loop through each column
-    for(int i = 0; i < boardSize; i++)
-    {
-        // Loop through each row in the column
-        int loopAmount = boardSize - 3;
-        if (loopAmount < 1)
-        {
-            loopAmount = 1;
-        }
-        for (int j = 0; j < loopAmount; j++)
-        {
-            currentGroup = 0;
-            for (int k = 0; k < required; k++)
-            {
-                currentGroup += board[j+k][i];
-            }
-            if (currentGroup == required)
-            {
-                // X wins
-                return 1;
-            }
-            else if (currentGroup == (-1) * required)
-            {
-                // O wins
-                return -1;
-            }
-        }
-    }
-    // No winner yet
-    return 0;
-}
-
-int exhaustiveCheckDiagonal(int** board, int boardSize)
-{
-    int level = 0;
-    // Loop through the possible right diagonal groups of three
-    for (int i = 0; i < boardSize - 2; i++)
-    {
-        int currentGroup = 0;
-        currentGroup += board[i][level];
-        currentGroup += board[i+1][level+1];
-        currentGroup += board[i+2][level+2];
-        if (currentGroup == 3)
-        {
-            // X wins
-            return 1;
-        }
-        else if (currentGroup == -3)
-        {
-            // O wins
-            return -1;
-        }
-        level++;
-    }
-
-    level = boardSize - 1;
-    // Loop through the possible left diagonal groups of three
-    for (int i = 0; i < boardSize - 2; i++)
-    {
-        int currentGroup = 0;
-        currentGroup += board[i][level];
-        currentGroup += board[i+1][level-1];
-        currentGroup += board[i+2][level-2];
-        if (currentGroup == 3)
-        {
-            // X wins
-            return 1;
-        }
-        else if (currentGroup == -3)
-        {
-            // O wins
-            return -1;
-        }
-        level--;
-    }
-
-    // No winner yet
-    return 0;
 }
